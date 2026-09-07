@@ -24,76 +24,96 @@ export default function Landing() {
   return (
     <>
       <FloatingOrbs />
-      <div className="page">
-        <div className="container text-center fade-in">
-
-          {/* Logo mark */}
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 72, height: 72,
-              borderRadius: "20px",
-              background: "linear-gradient(135deg, #3B82F6, #8B5CF6)",
-              boxShadow: "0 8px 30px rgba(59,130,246,0.4)",
-              marginBottom: "1.25rem",
-            }}
-          >
-            <Zap size={36} color="#fff" fill="#fff" />
+      <div className="page" style={{ padding: "2rem 1rem", minHeight: "100vh", justifyContent: "center" }}>
+        <div
+          className="fade-in"
+          style={{
+            width: "100%",
+            maxWidth: 900,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "2.5rem",
+          }}
+        >
+          {/* ── Brand Image ──────────────────────────────────── */}
+          <div style={{ width: "100%", textAlign: "center" }}>
+            <img
+              src="/EdgeCloud Image.png"
+              alt="EdgeCloud — Turn the room into a story"
+              style={{
+                width: "100%",
+                maxWidth: 520,
+                height: "auto",
+                objectFit: "contain",
+                display: "block",
+                margin: "0 auto",
+                /* Subtle drop shadow so it floats on white */
+                filter: "drop-shadow(0 12px 40px rgba(232,33,60,0.15))",
+                borderRadius: 16,
+              }}
+            />
           </div>
 
-          {/* Title */}
-          <h1 className="display-title" style={{ marginBottom: "0.5rem" }}>
-            EdgeCloud
-          </h1>
-
-          <p style={{
-            fontSize: "1.15rem",
-            color: "var(--muted)",
-            fontWeight: 500,
-            marginBottom: "3rem",
-            fontStyle: "italic",
-          }}>
+          {/* ── Tagline ──────────────────────────────────────── */}
+          <p
+            style={{
+              fontSize: "1.15rem",
+              color: "var(--muted)",
+              fontWeight: 500,
+              fontStyle: "italic",
+              textAlign: "center",
+              marginTop: "-1rem",
+            }}
+          >
             Turn the room into a story ✨
           </p>
 
-          {/* Cards */}
-          <div className="flex gap-3" style={{ flexWrap: "wrap", justifyContent: "center" }}>
-
+          {/* ── Action Cards ─────────────────────────────────── */}
+          <div
+            style={{
+              display: "flex",
+              gap: "1.5rem",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
             {/* Host card */}
             <div
               className="card scale-in"
               style={{
                 width: 280,
                 cursor: "pointer",
-                transition: "transform 0.2s, box-shadow 0.2s",
+                transition: "transform 0.22s, box-shadow 0.22s",
                 textAlign: "left",
               }}
               onClick={() => navigate("/host")}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-6px)";
-                e.currentTarget.style.boxShadow = "0 20px 60px rgba(59,130,246,0.18)";
+                e.currentTarget.style.boxShadow = "0 20px 60px rgba(232,33,60,0.18)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.boxShadow = "";
               }}
             >
-              <div style={{
-                width: 48, height: 48,
-                borderRadius: 14,
-                background: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: "1rem",
-                boxShadow: "0 4px 16px rgba(59,130,246,0.3)",
-              }}>
+              <div
+                style={{
+                  width: 48, height: 48,
+                  borderRadius: 14,
+                  background: "linear-gradient(135deg, #E8213C, #F97316)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: "1rem",
+                  boxShadow: "0 4px 16px rgba(232,33,60,0.30)",
+                }}
+              >
                 <Zap size={24} color="#fff" />
               </div>
               <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", marginBottom: "0.4rem" }}>
                 Create Game
               </h3>
-              <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.5 }}>
+              <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55 }}>
                 Host a live session — craft your sentence, share the QR, and reveal the results.
               </p>
               <div
@@ -113,20 +133,22 @@ export default function Landing() {
                 animationDelay: "0.1s",
               }}
             >
-              <div style={{
-                width: 48, height: 48,
-                borderRadius: 14,
-                background: "linear-gradient(135deg,#F97316,#EC4899)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: "1rem",
-                boxShadow: "0 4px 16px rgba(249,115,22,0.3)",
-              }}>
+              <div
+                style={{
+                  width: 48, height: 48,
+                  borderRadius: 14,
+                  background: "linear-gradient(135deg, #F97316, #EC4899)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: "1rem",
+                  boxShadow: "0 4px 16px rgba(249,115,22,0.30)",
+                }}
+              >
                 <Users size={24} color="#fff" />
               </div>
               <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", marginBottom: "0.4rem" }}>
                 Join Game
               </h3>
-              <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.5 }}>
+              <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55 }}>
                 Scan the QR code at the venue, or enter your game ID below.
               </p>
 
@@ -150,7 +172,9 @@ export default function Landing() {
                     onKeyDown={(e) => e.key === "Enter" && handleJoin()}
                     style={{ marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em" }}
                   />
-                  {error && <p style={{ color: "#EF4444", fontSize: "0.83rem", marginBottom: "0.5rem" }}>{error}</p>}
+                  {error && (
+                    <p style={{ color: "#EF4444", fontSize: "0.83rem", marginBottom: "0.5rem" }}>{error}</p>
+                  )}
                   <button className="btn btn-coral btn-sm" style={{ width: "100%" }} onClick={handleJoin}>
                     Join <ChevronRight size={16} />
                   </button>
@@ -170,7 +194,7 @@ export default function Landing() {
           </div>
 
           {/* Footer */}
-          <p style={{ marginTop: "3rem", fontSize: "0.78rem", color: "#CBD5E1", fontWeight: 500 }}>
+          <p style={{ fontSize: "0.78rem", color: "#CBD5E1", fontWeight: 500 }}>
             Powered by ET Edge · EdgeCloud v1.0
           </p>
         </div>

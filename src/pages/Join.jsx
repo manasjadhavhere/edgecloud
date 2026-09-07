@@ -20,7 +20,7 @@ function NameEntry({ onSubmit }) {
         <div style={{
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           width: 64, height: 64, borderRadius: "18px",
-          background: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+          background: "linear-gradient(135deg,#E8213C,#F97316)",
           boxShadow: "0 8px 30px rgba(59,130,246,0.4)",
           marginBottom: "1.25rem",
         }}>
@@ -29,7 +29,7 @@ function NameEntry({ onSubmit }) {
 
         <h1 style={{
           fontFamily: "var(--font-display)", fontSize: "2.5rem",
-          background: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+          background: "linear-gradient(135deg,#E8213C,#F97316)",
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
           marginBottom: "0.4rem",
         }}>
@@ -116,11 +116,11 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: "0.5rem",
               fontFamily: "var(--font-display)", fontSize: "1.5rem",
-              background: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+              background: "linear-gradient(135deg,#E8213C,#F97316)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: "0.25rem",
             }}>
-              <Zap size={20} style={{ color: "#3B82F6" }} />
+              <Zap size={20} style={{ color: "#E8213C" }} />
               EdgeCloud
             </div>
             <div className="badge badge-blue" style={{ marginTop: "0.25rem" }}>

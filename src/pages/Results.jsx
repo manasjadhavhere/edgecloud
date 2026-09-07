@@ -64,11 +64,11 @@ export default function Results() {
             <div style={{
               display: "inline-flex", alignItems: "center", gap: "0.5rem",
               fontFamily: "var(--font-display)", fontSize: "1.6rem",
-              background: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+              background: "linear-gradient(135deg,#E8213C,#F97316)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: "0.5rem",
             }}>
-              <Zap size={22} style={{ color: "#3B82F6" }} />
+              <Zap size={22} style={{ color: "#E8213C" }} />
               EdgeCloud
             </div>
 
@@ -88,7 +88,7 @@ export default function Results() {
             <h1 style={{
               fontFamily: "var(--font-display)",
               fontSize: "clamp(2rem, 5vw, 3.2rem)",
-              background: "linear-gradient(135deg,#1A1A2E,#3B82F6)",
+              background: "linear-gradient(135deg,#1A1A2E,#E8213C)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               marginBottom: "0.75rem",
             }}>
@@ -115,7 +115,7 @@ export default function Results() {
                       {i < arr.length - 1 && (
                         <span style={{
                           display: "inline-block", minWidth: 60,
-                          borderBottom: "2px solid #3B82F6",
+                          borderBottom: "2px solid #E8213C",
                           marginInline: 4,
                         }}>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                       )}

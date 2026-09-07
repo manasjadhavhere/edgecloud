@@ -33,7 +33,7 @@ export default function QRDisplay({ url, gameId }) {
               position: "absolute",
               width: 10, height: 10,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #3B82F6, #8B5CF6)",
+              background: "linear-gradient(135deg, #E8213C, #F97316)",
               ...pos,
             }}
           />

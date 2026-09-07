@@ -55,7 +55,7 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
 
       {/* Preview */}
       {sentence && (
-        <div className="card card-sm" style={{ marginTop: "1rem", background: "rgba(59,130,246,0.04)" }}>
+        <div className="card card-sm" style={{ marginTop: "1rem", background: "rgba(232,33,60,0.04)" }}>
           <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
             Preview
           </p>
@@ -67,9 +67,9 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
                   <span style={{
                     display: "inline-block",
                     minWidth: 80,
-                    borderBottom: "3px solid #3B82F6",
+                    borderBottom: "3px solid #E8213C",
                     marginInline: "4px",
-                    color: "#3B82F6",
+                    color: "#E8213C",
                     fontFamily: "var(--font-display)",
                   }}>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -179,10 +179,10 @@ export default function Host() {
             <div style={{
               display: "flex", alignItems: "center", gap: "0.5rem",
               fontFamily: "var(--font-display)", fontSize: "1.5rem",
-              background: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+              background: "linear-gradient(135deg,#E8213C,#F97316)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             }}>
-              <Zap size={22} style={{ color: "#3B82F6" }} />
+              <Zap size={22} style={{ color: "#E8213C" }} />
               EdgeCloud
             </div>
           </div>
@@ -287,9 +287,9 @@ export default function Host() {
                             <span style={{
                               display: "inline-block",
                               minWidth: 80,
-                              borderBottom: "3px solid #3B82F6",
+                              borderBottom: "3px solid #E8213C",
                               marginInline: "4px",
-                              color: "#3B82F6",
+                              color: "#E8213C",
                             }}>
                               &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                             </span>

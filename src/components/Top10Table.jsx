@@ -41,7 +41,7 @@ export default function Top10Table({ words }) {
         {top10.map((item, i) => {
           const pct = Math.round((item.value / maxVal) * 100);
           const rankStyle = RANK_COLORS[i] || {
-            bg: "linear-gradient(135deg,#3B82F6,#8B5CF6)",
+            bg: "linear-gradient(135deg,#E8213C,#F97316)",
             color: "#fff",
           };
           return (

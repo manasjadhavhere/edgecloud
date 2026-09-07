@@ -118,8 +118,8 @@ export default function Landing() {
           <div
             style={{
               display: "flex",
-              gap: "1.5rem",
-              flexWrap: "wrap",
+              gap: "clamp(0.5rem, 3vw, 1.5rem)",
+              flexWrap: "nowrap",
               justifyContent: "center",
               alignItems: "stretch",
               width: "100%",
@@ -128,7 +128,10 @@ export default function Landing() {
             <div
               className="card scale-in"
               style={{
-                width: 280,
+                flex: "1 1 0",
+                minWidth: 0,
+                maxWidth: 320,
+                padding: "clamp(1rem, 3vw, 2rem)",
                 cursor: "pointer",
                 transition: "transform 0.22s, box-shadow 0.22s",
                 textAlign: "left",
@@ -157,7 +160,7 @@ export default function Landing() {
               >
                 <Zap size={24} color="#fff" />
               </div>
-              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", marginBottom: "0.4rem" }}>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1rem, 3vw, 1.3rem)", marginBottom: "0.4rem" }}>
                 Create Game
               </h3>
               <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55 }}>
@@ -167,7 +170,7 @@ export default function Landing() {
               <div style={{ flex: 1 }} />
               <div
                 className="btn btn-primary btn-sm"
-                style={{ marginTop: "1.25rem", width: "100%", justifyContent: "center" }}
+                style={{ marginTop: "1.25rem", width: "100%", justifyContent: "center", whiteSpace: "normal", textAlign: "center", padding: "0.55rem 0.5rem" }}
               >
                 Start as Host <ChevronRight size={16} />
               </div>
@@ -177,7 +180,10 @@ export default function Landing() {
             <div
               className="card scale-in"
               style={{
-                width: 280,
+                flex: "1 1 0",
+                minWidth: 0,
+                maxWidth: 320,
+                padding: "clamp(1rem, 3vw, 2rem)",
                 textAlign: "left",
                 animationDelay: "0.1s",
                 display: "flex",
@@ -196,7 +202,7 @@ export default function Landing() {
               >
                 <Users size={24} color="#fff" />
               </div>
-              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", marginBottom: "0.4rem" }}>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1rem, 3vw, 1.3rem)", marginBottom: "0.4rem" }}>
                 Join Game
               </h3>
               <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55 }}>
@@ -209,7 +215,7 @@ export default function Landing() {
               {activeGameId && !showJoinInput && (
                 <button
                   className="btn btn-coral btn-sm"
-                  style={{ marginTop: "1.25rem", width: "100%" }}
+                  style={{ marginTop: "1.25rem", width: "100%", whiteSpace: "normal", padding: "0.55rem 0.5rem" }}
                   onClick={() => navigate(`/join/${activeGameId}`)}
                 >
                   Join Active Game <ChevronRight size={16} />
@@ -229,7 +235,7 @@ export default function Landing() {
                   {error && (
                     <p style={{ color: "#EF4444", fontSize: "0.83rem", marginBottom: "0.5rem" }}>{error}</p>
                   )}
-                  <button className="btn btn-coral btn-sm" style={{ width: "100%" }} onClick={handleJoin}>
+                  <button className="btn btn-coral btn-sm" style={{ width: "100%", whiteSpace: "normal", padding: "0.55rem 0.5rem" }} onClick={handleJoin}>
                     Join <ChevronRight size={16} />
                   </button>
                 </div>
@@ -238,7 +244,7 @@ export default function Landing() {
               {activeGameId && !showJoinInput && (
                 <button
                   className="btn btn-ghost btn-sm"
-                  style={{ marginTop: "0.5rem", width: "100%" }}
+                  style={{ marginTop: "0.5rem", width: "100%", whiteSpace: "normal", padding: "0.55rem 0.5rem" }}
                   onClick={() => setShowJoinInput(true)}
                 >
                   Enter game ID manually

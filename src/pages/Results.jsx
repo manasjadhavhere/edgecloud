@@ -7,7 +7,7 @@ import FloatingOrbs from "../components/FloatingOrbs";
 import WordCloudViz from "../components/WordCloudViz";
 import Top10Table from "../components/Top10Table";
 import Confetti from "../components/Confetti";
-import { Zap, Download, RotateCcw, Trophy } from "lucide-react";
+import { Download, RotateCcw, Trophy } from "lucide-react";
 
 export default function Results() {
   const { gameId } = useParams();
@@ -61,16 +61,11 @@ export default function Results() {
 
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }} className="fade-in">
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: "0.5rem",
-              fontFamily: "var(--font-display)", fontSize: "1.6rem",
-              background: "linear-gradient(135deg,#E8213C,#F97316)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              marginBottom: "0.5rem",
-            }}>
-              <Zap size={22} style={{ color: "#E8213C" }} />
-              EdgeCloud
-            </div>
+            <img
+              src="/EdgeCloud Image.png"
+              alt="EdgeCloud"
+              style={{ height: 42, width: "auto", objectFit: "contain", marginBottom: "0.75rem" }}
+            />
 
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{

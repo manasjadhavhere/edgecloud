@@ -7,7 +7,7 @@ import { generateGameId, countBlanks } from "../utils/wordCount";
 import { useGame } from "../hooks/useGame";
 import FloatingOrbs from "../components/FloatingOrbs";
 import QRDisplay from "../components/QRDisplay";
-import { Zap, Plus, StopCircle, Eye, Users, ChevronLeft } from "lucide-react";
+import { Plus, StopCircle, Eye, Users, ChevronLeft } from "lucide-react";
 
 // ── Sentence editor ──────────────────────────────────────────
 function SentenceEditor({ sentence, setSentence, textareaRef }) {
@@ -176,15 +176,11 @@ export default function Host() {
               <ChevronLeft size={16} /> Back
             </button>
             <div style={{ flex: 1 }} />
-            <div style={{
-              display: "flex", alignItems: "center", gap: "0.5rem",
-              fontFamily: "var(--font-display)", fontSize: "1.5rem",
-              background: "linear-gradient(135deg,#E8213C,#F97316)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-            }}>
-              <Zap size={22} style={{ color: "#E8213C" }} />
-              EdgeCloud
-            </div>
+            <img
+              src="/EdgeCloud Image.png"
+              alt="EdgeCloud"
+              style={{ height: 38, width: "auto", objectFit: "contain" }}
+            />
           </div>
 
           {/* Step 1: Compose */}

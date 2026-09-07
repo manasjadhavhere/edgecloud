@@ -6,7 +6,7 @@ import { ref, push } from "firebase/database";
 import { useGame } from "../hooks/useGame";
 import { countBlanks } from "../utils/wordCount";
 import FloatingOrbs from "../components/FloatingOrbs";
-import { Zap, Send, Loader, CheckCircle } from "lucide-react";
+import { Send, Loader, CheckCircle } from "lucide-react";
 
 // ── Name entry screen ────────────────────────────────────────
 function NameEntry({ onSubmit }) {
@@ -17,24 +17,18 @@ function NameEntry({ onSubmit }) {
       <FloatingOrbs />
       <div className="container text-center fade-in" style={{ maxWidth: 440 }}>
         {/* Logo */}
-        <div style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          width: 64, height: 64, borderRadius: "18px",
-          background: "linear-gradient(135deg,#E8213C,#F97316)",
-          boxShadow: "0 8px 30px rgba(59,130,246,0.4)",
-          marginBottom: "1.25rem",
-        }}>
-          <Zap size={32} color="#fff" fill="#fff" />
-        </div>
-
-        <h1 style={{
-          fontFamily: "var(--font-display)", fontSize: "2.5rem",
-          background: "linear-gradient(135deg,#E8213C,#F97316)",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          marginBottom: "0.4rem",
-        }}>
-          EdgeCloud
-        </h1>
+        <img
+          src="/EdgeCloud Image.png"
+          alt="EdgeCloud"
+          style={{
+            width: "auto",
+            maxWidth: 220,
+            height: "auto",
+            objectFit: "contain",
+            display: "block",
+            margin: "0 auto 1.5rem",
+          }}
+        />
 
         <p className="text-muted" style={{ marginBottom: "2.5rem" }}>
           Welcome! Enter your name to join the game.
@@ -113,16 +107,11 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
 
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: "0.5rem",
-              fontFamily: "var(--font-display)", fontSize: "1.5rem",
-              background: "linear-gradient(135deg,#E8213C,#F97316)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              marginBottom: "0.25rem",
-            }}>
-              <Zap size={20} style={{ color: "#E8213C" }} />
-              EdgeCloud
-            </div>
+            <img
+              src="/EdgeCloud Image.png"
+              alt="EdgeCloud"
+              style={{ height: 36, width: "auto", objectFit: "contain", marginBottom: "0.35rem" }}
+            />
             <div className="badge badge-blue" style={{ marginTop: "0.25rem" }}>
               <span className="live-dot" style={{ width: 6, height: 6 }} />
               LIVE GAME

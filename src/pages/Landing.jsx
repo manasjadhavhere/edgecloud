@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FloatingOrbs from "../components/FloatingOrbs";
+import HowToPlay from "../components/HowToPlay";
 import { useActiveGame } from "../hooks/useGame";
-import { Zap, Users, ChevronRight } from "lucide-react";
+import { Zap, Users, ChevronRight, Info } from "lucide-react";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function Landing() {
   const [joinId, setJoinId] = useState("");
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [error, setError] = useState("");
+  const [showHowTo, setShowHowTo] = useState(false);
 
   function handleJoin() {
     const id = joinId.trim().toUpperCase() || activeGameId;
@@ -24,6 +26,49 @@ export default function Landing() {
   return (
     <>
       <FloatingOrbs />
+
+      {/* ── How-to-Play info button ─── */}
+      <button
+        onClick={() => setShowHowTo(true)}
+        aria-label="How to play"
+        title="How to play"
+        style={{
+          position: "fixed",
+          top: "clamp(0.75rem, 2vw, 1.25rem)",
+          right: "clamp(0.75rem, 2vw, 1.25rem)",
+          zIndex: 900,
+          width: "clamp(36px, 5vw, 44px)",
+          height: "clamp(36px, 5vw, 44px)",
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.08)",
+          border: "1.5px solid rgba(255,255,255,0.15)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          color: "var(--muted)",
+          transition: "background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(232,33,60,0.18)";
+          e.currentTarget.style.color = "#E8213C";
+          e.currentTarget.style.transform = "scale(1.1)";
+          e.currentTarget.style.boxShadow = "0 4px 20px rgba(232,33,60,0.28)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+          e.currentTarget.style.color = "var(--muted)";
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.18)";
+        }}
+      >
+        <Info size={18} />
+      </button>
+
+      <HowToPlay open={showHowTo} onClose={() => setShowHowTo(false)} />
+
       <div className="page" style={{ padding: "2rem 1rem", minHeight: "100vh", justifyContent: "center" }}>
         <div
           className="fade-in"
@@ -204,7 +249,7 @@ export default function Landing() {
 
           {/* Footer */}
           <p style={{ fontSize: "0.78rem", color: "#CBD5E1", fontWeight: 500 }}>
-            Powered by ET Edge · EdgeCloud v1.0
+            Powered by ET Edge · EdgeCloud v1.1
           </p>
         </div>
       </div>

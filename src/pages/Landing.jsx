@@ -76,10 +76,10 @@ export default function Landing() {
               gap: "1.5rem",
               flexWrap: "wrap",
               justifyContent: "center",
+              alignItems: "stretch",
               width: "100%",
             }}
           >
-            {/* Host card */}
             <div
               className="card scale-in"
               style={{
@@ -87,6 +87,8 @@ export default function Landing() {
                 cursor: "pointer",
                 transition: "transform 0.22s, box-shadow 0.22s",
                 textAlign: "left",
+                display: "flex",
+                flexDirection: "column",
               }}
               onClick={() => navigate("/host")}
               onMouseEnter={(e) => {
@@ -116,6 +118,8 @@ export default function Landing() {
               <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55 }}>
                 Host a live session — craft your sentence, share the QR, and reveal the results.
               </p>
+              {/* Spacer pushes button to bottom */}
+              <div style={{ flex: 1 }} />
               <div
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: "1.25rem", width: "100%", justifyContent: "center" }}
@@ -131,6 +135,8 @@ export default function Landing() {
                 width: 280,
                 textAlign: "left",
                 animationDelay: "0.1s",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <div
@@ -151,6 +157,9 @@ export default function Landing() {
               <p className="text-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55 }}>
                 Scan the QR code at the venue, or enter your game ID below.
               </p>
+
+              {/* Spacer pushes action area to bottom */}
+              <div style={{ flex: 1 }} />
 
               {activeGameId && !showJoinInput && (
                 <button

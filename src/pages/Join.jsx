@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
-import { ref, push } from "firebase/database";
+import { ref, push, set } from "firebase/database";
 import { useGame } from "../hooks/useGame";
 import { countBlanks } from "../utils/wordCount";
 import FloatingOrbs from "../components/FloatingOrbs";
@@ -267,8 +267,18 @@ export default function Join() {
     );
   }
 
+  async function handleNameSubmit(name) {
+    setParticipantName(name);
+    try {
+      // Use push or sanitize the name for set. Using push is simpler to avoid invalid Firebase keys.
+      await push(ref(db, `games/${gameId}/participants`), name);
+    } catch (err) {
+      console.error("Failed to register participant:", err);
+    }
+  }
+
   if (!participantName) {
-    return <NameEntry onSubmit={setParticipantName} />;
+    return <NameEntry onSubmit={handleNameSubmit} />;
   }
 
   if (submitted) {

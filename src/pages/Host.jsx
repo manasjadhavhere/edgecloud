@@ -3,10 +3,11 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { ref, set, update } from "firebase/database";
-import { generateGameId, countBlanks } from "../utils/wordCount";
+import { generateGameId, countBlanks, computeWordFrequencies } from "../utils/wordCount";
 import { useGame } from "../hooks/useGame";
 import FloatingOrbs from "../components/FloatingOrbs";
 import QRDisplay from "../components/QRDisplay";
+import WordCloudViz from "../components/WordCloudViz";
 import { Plus, StopCircle, Eye, Users, ChevronLeft } from "lucide-react";
 
 // ── Sentence editor ──────────────────────────────────────────
@@ -85,31 +86,41 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
 }
 
 // ── Participant list ─────────────────────────────────────────
-function ParticipantList({ responses }) {
+function ParticipantList({ responses, game }) {
   const seen = new Set();
-  const unique = responses.filter((r) => {
+  const uniqueResponses = responses.filter((r) => {
     if (seen.has(r.name)) return false;
     seen.add(r.name); return true;
   });
+
+  const joinedNames = new Set(Object.values(game?.participants || {}));
+  // Ensure those who answered are in the joined set (in case of legacy/direct answers)
+  uniqueResponses.forEach((r) => joinedNames.add(r.name));
+
+  const joinedCount = joinedNames.size;
+  const answeredCount = uniqueResponses.length;
 
   return (
     <div>
       <div className="flex items-center gap-1" style={{ marginBottom: "0.75rem" }}>
         <span className="live-dot" />
         <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>
-          {responses.length} response{responses.length !== 1 ? "s" : ""} from {unique.length} participant{unique.length !== 1 ? "s" : ""}
+          Joined: {joinedCount} | Answered: {answeredCount}
         </span>
       </div>
       <div className="flex gap-1" style={{ flexWrap: "wrap" }}>
-        {unique.map((r) => (
-          <div className="participant-chip" key={r.id}>
-            <div className="participant-avatar">
-              {r.name?.charAt(0)?.toUpperCase()}
+        {Array.from(joinedNames).map((name, i) => {
+          const hasAnswered = seen.has(name);
+          return (
+            <div className="participant-chip" key={i} style={{ opacity: hasAnswered ? 1 : 0.5 }}>
+              <div className="participant-avatar">
+                {name?.charAt(0)?.toUpperCase()}
+              </div>
+              {name}
             </div>
-            {r.name}
-          </div>
-        ))}
-        {unique.length === 0 && (
+          );
+        })}
+        {joinedCount === 0 && (
           <p className="text-muted" style={{ fontSize: "0.85rem" }}>
             Waiting for participants to join…
           </p>
@@ -129,7 +140,7 @@ export default function Host() {
   const [error, setError] = useState("");
   const textareaRef = useRef(null);
 
-  const { responses } = useGame(gameId);
+  const { game, responses } = useGame(gameId);
 
   const joinUrl = `${window.location.origin}/join/${gameId}`;
 
@@ -266,8 +277,24 @@ export default function Host() {
                       Game is Live!
                     </h2>
                     <p className="text-muted">
-                      Participants are responding. When ready, stop the game to reveal the word cloud.
+                      Participants are responding. Watch the word cloud update in real-time, and stop the game when ready.
                     </p>
+                  </div>
+
+                  {/* Real-time Word Cloud */}
+                  <div className="card scale-in">
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
+                      Real-time Word Cloud
+                    </p>
+                    <div style={{ height: "300px", background: "linear-gradient(135deg,#F0F7FF 0%,#FFF5F0 50%,#F5F0FF 100%)", borderRadius: "var(--radius-md)" }}>
+                      {responses.length > 0 ? (
+                        <WordCloudViz words={computeWordFrequencies(responses)} />
+                      ) : (
+                        <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}>
+                          Waiting for words...
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Sentence preview */}
@@ -297,7 +324,7 @@ export default function Host() {
 
                   {/* Participants */}
                   <div className="card">
-                    <ParticipantList responses={responses} />
+                    <ParticipantList responses={responses} game={game} />
                   </div>
 
                   {/* End game */}

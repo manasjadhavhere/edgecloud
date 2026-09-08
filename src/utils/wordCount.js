@@ -15,14 +15,15 @@ export function computeWordFrequencies(responses) {
     const words = response.words || [];
     for (const raw of words) {
       if (!raw) continue;
-      // Tokenize: lowercase, split on whitespace/punctuation, filter short words
-      const tokens = raw
+      // Treat the entire blank's content as a single word/phrase
+      const token = raw
+        .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, " ")
-        .split(/\s+/)
-        .filter((w) => w.length > 1);
+        .replace(/[^a-z0-9\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 
-      for (const token of tokens) {
+      if (token.length > 0) {
         freq[token] = (freq[token] || 0) + 1;
       }
     }

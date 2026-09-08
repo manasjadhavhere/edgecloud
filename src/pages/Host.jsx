@@ -296,6 +296,15 @@ export default function Host() {
                       )}
                     </div>
                   </div>
+
+                  {/* End game */}
+                  <button
+                    className="btn btn-coral btn-lg"
+                    style={{ width: "100%", marginTop: "auto" }}
+                    onClick={handleEnd}
+                  >
+                    <StopCircle size={22} /> Stop Game &amp; Reveal Results
+                  </button>
                 </div>
 
                 {/* Right: Info & Controls */}
@@ -344,15 +353,6 @@ export default function Host() {
                   <div className="card" style={{ flex: 1 }}>
                     <ParticipantList responses={responses} game={game} />
                   </div>
-
-                  {/* End game */}
-                  <button
-                    className="btn btn-coral btn-lg"
-                    style={{ width: "100%", marginTop: "auto" }}
-                    onClick={handleEnd}
-                  >
-                    <StopCircle size={22} /> Stop Game &amp; Reveal Results
-                  </button>
                 </div>
               </div>
             </div>

@@ -249,11 +249,11 @@ export default function Host() {
                   display: "grid",
                   gridTemplateColumns: "1fr 340px",
                   gap: "1.5rem",
-                  alignItems: "start",
+                  alignItems: "stretch",
                 }}
               >
                 {/* Left: live status */}
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3" style={{ height: "100%" }}>
 
                   {/* Status card */}
                   <div className="card">
@@ -282,11 +282,11 @@ export default function Host() {
                   </div>
 
                   {/* Real-time Word Cloud */}
-                  <div className="card scale-in">
+                  <div className="card scale-in flex-1 flex flex-col" style={{ minHeight: "450px" }}>
                     <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
                       Real-time Word Cloud
                     </p>
-                    <div style={{ height: "300px", background: "linear-gradient(135deg,#F0F7FF 0%,#FFF5F0 50%,#F5F0FF 100%)", borderRadius: "var(--radius-md)" }}>
+                    <div style={{ flex: 1, background: "linear-gradient(135deg,#F0F7FF 0%,#FFF5F0 50%,#F5F0FF 100%)", borderRadius: "var(--radius-md)", minHeight: "350px" }}>
                       {responses.length > 0 ? (
                         <WordCloudViz words={computeWordFrequencies(responses)} />
                       ) : (
@@ -295,6 +295,24 @@ export default function Host() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* Right: Info & Controls */}
+                <div className="flex flex-col gap-3">
+                  {/* QR Code */}
+                  <div className="card">
+                    <div className="step-indicator" style={{ marginBottom: "1rem" }}>
+                      <Users size={16} style={{ color: "var(--muted)" }} />
+                      <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+                        Share with attendees
+                      </span>
+                    </div>
+                    <QRDisplay url={joinUrl} gameId={gameId} />
+                    <div className="divider" />
+                    <p style={{ fontSize: "0.78rem", color: "var(--muted)", textAlign: "center", wordBreak: "break-all" }}>
+                      {joinUrl}
+                    </p>
                   </div>
 
                   {/* Sentence preview */}
@@ -323,33 +341,18 @@ export default function Host() {
                   </div>
 
                   {/* Participants */}
-                  <div className="card">
+                  <div className="card" style={{ flex: 1 }}>
                     <ParticipantList responses={responses} game={game} />
                   </div>
 
                   {/* End game */}
                   <button
                     className="btn btn-coral btn-lg"
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", marginTop: "auto" }}
                     onClick={handleEnd}
                   >
                     <StopCircle size={22} /> Stop Game &amp; Reveal Results
                   </button>
-                </div>
-
-                {/* Right: QR */}
-                <div className="card" style={{ position: "sticky", top: "2rem" }}>
-                  <div className="step-indicator" style={{ marginBottom: "1rem" }}>
-                    <Users size={16} style={{ color: "var(--muted)" }} />
-                    <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
-                      Share with attendees
-                    </span>
-                  </div>
-                  <QRDisplay url={joinUrl} gameId={gameId} />
-                  <div className="divider" />
-                  <p style={{ fontSize: "0.78rem", color: "var(--muted)", textAlign: "center", wordBreak: "break-all" }}>
-                    {joinUrl}
-                  </p>
                 </div>
               </div>
             </div>

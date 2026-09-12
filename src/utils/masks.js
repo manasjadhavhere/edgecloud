@@ -6,7 +6,7 @@
 
 // Crown SVG — a precise 5-point crown modeled after the reference image
 const CROWN_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -50 1000 600" width="1000" height="600" preserveAspectRatio="none">
   <!-- Precision drawn crown base with bezier curves for graceful stems -->
   <path d="
     M 130 470
@@ -35,7 +35,7 @@ const CROWN_SVG = `
 
 // Cloud SVG — a wide, fluffy multi-lobe cloud shape
 const CLOUD_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -50 1000 600" width="1000" height="600" preserveAspectRatio="none">
   <path d="
     M 150 350
     A 100 100 0 0 1 250 200

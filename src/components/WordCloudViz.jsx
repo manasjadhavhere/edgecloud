@@ -31,8 +31,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
     const colors = THEME_COLORS[theme] || THEME_COLORS.default;
     const { default: WordCloud } = await import("wordcloud");
 
-    const w = container.offsetWidth  || 800;
-    const h = container.offsetHeight || 500;
+    const w = container.offsetWidth  || 1000;
+    const h = container.offsetHeight || 600;
     canvas.width  = w;
     canvas.height = h;
     if (forwardedRef) forwardedRef.current = canvas;
@@ -103,7 +103,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
       shuffle:         true,
       shape:           "square",
     });
-  }, [words, theme, forwardedRef]);
+  }, [JSON.stringify(words), theme, forwardedRef]);
 
   useEffect(() => {
     drawCloud();
@@ -113,7 +113,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
     <div
       ref={containerRef}
       className="wordcloud-wrapper"
-      style={{ position: "relative", minHeight: 420, background: "#fff" }}
+      style={{ position: "relative", width: "100%", aspectRatio: "1000 / 600", background: "#fff", margin: "0 auto" }}
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
     </div>

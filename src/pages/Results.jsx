@@ -1,5 +1,5 @@
 // src/pages/Results.jsx
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame } from "../hooks/useGame";
 import { computeWordFrequencies } from "../utils/wordCount";
@@ -18,7 +18,7 @@ export default function Results() {
   const [downloading, setDownloading] = useState(false);
   const [viewIndex, setViewIndex]     = useState(0); // 0 = cloud, 1 = table
 
-  const frequencies = computeWordFrequencies(responses);
+  const frequencies = useMemo(() => computeWordFrequencies(responses), [responses]);
   const event = EVENTS[game?.eventId];
 
   async function handleDownload() {
@@ -169,30 +169,26 @@ export default function Results() {
               </div>
 
               {/* Word Cloud view */}
-              {viewIndex === 0 && (
-                <div className="card scale-in">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-                    <h2 className="section-title">Word Cloud</h2>
-                    <button className="btn btn-outline btn-sm" onClick={handleDownload} disabled={downloading}>
-                      <Download size={13} /> {downloading ? "Saving…" : "Download PNG"}
-                    </button>
-                  </div>
-                  <div id="wordcloud-capture" style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", padding: "1rem" }}>
-                    <p style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem", textAlign: "center", color: "var(--text-muted)", marginBottom: "0.5rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                      {event?.name || "EdgeCloud"} · Game #{gameId}
-                    </p>
-                    <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} />
-                  </div>
+              <div className="card scale-in" style={{ display: viewIndex === 0 ? "block" : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                  <h2 className="section-title">Word Cloud</h2>
+                  <button className="btn btn-outline btn-sm" onClick={handleDownload} disabled={downloading}>
+                    <Download size={13} /> {downloading ? "Saving…" : "Download PNG"}
+                  </button>
                 </div>
-              )}
+                <div id="wordcloud-capture" style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", padding: "1rem" }}>
+                  <p style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem", textAlign: "center", color: "var(--text-muted)", marginBottom: "0.5rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                    {event?.name || "EdgeCloud"} · Game #{gameId}
+                  </p>
+                  <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} />
+                </div>
+              </div>
 
               {/* Table view */}
-              {viewIndex === 1 && (
-                <div className="card scale-in">
-                  <h2 className="section-title" style={{ marginBottom: "1.25rem" }}>Top Words by Frequency</h2>
-                  <Top10Table words={frequencies} />
-                </div>
-              )}
+              <div className="card scale-in" style={{ display: viewIndex === 1 ? "block" : "none" }}>
+                <h2 className="section-title" style={{ marginBottom: "1.25rem" }}>Top Words by Frequency</h2>
+                <Top10Table words={frequencies} />
+              </div>
             </>
           )}
         </div>

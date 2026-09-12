@@ -23,46 +23,39 @@ export default function Landing() {
 
       {/* Side Images and Borders */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
-        <svg width="0" height="0" style={{ position: "absolute" }}>
-          <defs>
-            <clipPath id="leftClip" clipPathUnits="objectBoundingBox">
-              <path d="M 0 0 L 0.35 0 Q 0.25 0.5 0.05 1 L 0 1 Z" />
-            </clipPath>
-            <clipPath id="rightClip" clipPathUnits="objectBoundingBox">
-              <path d="M 0.8 0 L 1 0 L 1 1 L 0.65 1 Q 0.7 0.5 0.8 0 Z" />
-            </clipPath>
-          </defs>
-        </svg>
         
+        {/* Left Image */}
         <img 
           src="/left_side_image.webp" 
           alt=""
           style={{
             position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-            objectFit: "cover", clipPath: "url(#leftClip)"
+            objectFit: "cover", clipPath: "polygon(0 0, 30% 0, 10% 100%, 0% 100%)"
           }} 
         />
+        {/* Right Image */}
         <img 
           src="/right_image.jpg" 
           alt=""
           style={{
             position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-            objectFit: "cover", clipPath: "url(#rightClip)"
+            objectFit: "cover", clipPath: "polygon(80% 0, 100% 0, 100% 100%, 60% 100%)"
           }} 
         />
         
+        {/* Borders */}
         <svg 
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
           preserveAspectRatio="none" 
           viewBox="0 0 100 100"
         >
           {/* Left Line */}
-          <path d="M 35 0 Q 25 50 5 100" fill="none" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
-          <path d="M 35 0 Q 25 50 5 100" fill="none" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          <line x1="30" y1="0" x2="10" y2="100" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
+          <line x1="30" y1="0" x2="10" y2="100" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
           
           {/* Right Line */}
-          <path d="M 80 0 Q 70 50 65 100" fill="none" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
-          <path d="M 80 0 Q 70 50 65 100" fill="none" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          <line x1="80" y1="0" x2="60" y2="100" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
+          <line x1="80" y1="0" x2="60" y2="100" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
         </svg>
       </div>
 

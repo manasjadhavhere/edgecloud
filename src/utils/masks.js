@@ -36,20 +36,23 @@ const CROWN_SVG = `
 // Cloud SVG — a wide, fluffy multi-lobe cloud shape
 const CLOUD_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -50 1000 600" width="1000" height="600" preserveAspectRatio="none">
-  <path d="
-    M 150 350
-    A 100 100 0 0 1 250 200
-    A 120 120 0 0 1 450 150
-    A 110 110 0 0 1 600 220
-    A 90 90 0 0 1 700 350
-    Z
-  " fill="#000" />
-  <rect x="150" y="250" width="550" height="150" rx="40" fill="#000" />
-  <circle cx="150" cy="350" r="70" fill="#000" />
-  <circle cx="700" cy="350" r="70" fill="#000" />
-  <circle cx="400" cy="350" r="100" fill="#000" />
-  <circle cx="550" cy="350" r="80" fill="#000" />
-  <circle cx="250" cy="350" r="80" fill="#000" />
+  <!-- Base block (creates flat-ish bottom) -->
+  <rect x="90" y="260" width="640" height="160" rx="80" fill="#000" />
+  
+  <!-- Left-most puff -->
+  <circle cx="150" cy="270" r="90" fill="#000" />
+  
+  <!-- Mid-Left puff -->
+  <circle cx="270" cy="190" r="130" fill="#000" />
+  
+  <!-- Center tall puff -->
+  <circle cx="430" cy="140" r="170" fill="#000" />
+  
+  <!-- Mid-Right puff -->
+  <circle cx="590" cy="195" r="125" fill="#000" />
+  
+  <!-- Right-most puff -->
+  <circle cx="710" cy="265" r="95" fill="#000" />
 </svg>
 `;
 

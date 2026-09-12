@@ -19,26 +19,6 @@ export default function Landing() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
-      <style>{`
-        .btn-red {
-          background-color: #D32F2F !important;
-          color: #ffffff !important;
-          font-weight: 700 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.08em !important;
-          border-radius: 6px !important;
-          border: none !important;
-          box-shadow: 0 4px 10px rgba(211, 47, 47, 0.25) !important;
-          transition: transform 0.2s, background-color 0.2s !important;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .btn-red:hover {
-          background-color: #B71C1C !important;
-          transform: translateY(-1px);
-        }
-      `}</style>
       <B2BBackground />
       
       {/* Top right Host Login */}
@@ -83,8 +63,8 @@ export default function Landing() {
               </p>
               {activeGameId && (
                 <button
-                  className="btn-red"
-                  style={{ width: "100%", marginBottom: "1rem", padding: "0.85rem", fontSize: "0.9rem" }}
+                  className="btn btn-primary"
+                  style={{ width: "100%", marginBottom: "1rem" }}
                   onClick={() => navigate(`/join/${activeGameId}`)}
                 >
                   Join Active Game <ArrowRight size={16} style={{ marginLeft: "6px" }} />
@@ -97,9 +77,9 @@ export default function Landing() {
                   value={joinId}
                   onChange={(e) => { setJoinId(e.target.value); setError(""); }}
                   onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                  style={{ textTransform: "uppercase", letterSpacing: "0.08em", flex: 1, borderRadius: "6px" }}
+                  style={{ textTransform: "uppercase", letterSpacing: "0.08em", flex: 1 }}
                 />
-                <button className="btn-red" style={{ padding: "0 1.5rem" }} onClick={handleJoin}>
+                <button className="btn btn-primary" onClick={handleJoin}>
                   Join
                 </button>
               </div>

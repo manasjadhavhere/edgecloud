@@ -1,5 +1,6 @@
 // src/pages/Landing.jsx
 import { useNavigate } from "react-router-dom";
+import B2BBackground from "../components/B2BBackground";
 import { useActiveGame } from "../hooks/useGame";
 import { useState } from "react";
 import { LogIn, Users, ArrowRight } from "lucide-react";
@@ -17,22 +18,8 @@ export default function Landing() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        src="/videos/animation.mp4"
-        style={{
-          position: "absolute",
-          top: 0, left: 0, width: "100%", height: "100%",
-          objectFit: "cover",
-          opacity: 0.25,
-          zIndex: 0,
-          pointerEvents: "none"
-        }}
-      />
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
+      <B2BBackground />
 
       {/* Top right Host Login */}
       <div style={{ position: "absolute", top: "1.5rem", right: "2rem", zIndex: 10 }}>

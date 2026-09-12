@@ -54,20 +54,7 @@ export default function B2BBackground() {
           66% { transform: translate(-20px, 20px) scale(0.9); }
           100% { transform: translate(0, 0) scale(1); }
         }
-        
-        /* Grid overlay */
-        .b2b-grid-overlay {
-          position: absolute;
-          inset: 0;
-          background-image: 
-            linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-          -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-        }
       `}</style>
-      <div className="b2b-grid-overlay"></div>
     </div>
   );
 }

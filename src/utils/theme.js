@@ -61,6 +61,10 @@ export function isLoggedIn() {
   return sessionStorage.getItem("ec_auth") === "true";
 }
 
+export function setLoggedOut() {
+  sessionStorage.removeItem("ec_auth");
+}
+
 export function setLoggedIn() {
   sessionStorage.setItem("ec_auth", "true");
 }

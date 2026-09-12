@@ -2,8 +2,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BgGrid from "../components/BgGrid";
-import { EVENTS, storeTheme, getStoredTheme, isLoggedIn, applyTheme } from "../utils/theme";
-import { Share2, Layers, StopCircle, Zap } from "lucide-react";
+import { EVENTS, storeTheme, getStoredTheme, isLoggedIn, applyTheme, setLoggedOut } from "../utils/theme";
+import { Share2, Layers, StopCircle, Zap, LogOut } from "lucide-react";
 import { useActiveGame, useGame } from "../hooks/useGame";
 import { db } from "../firebase";
 import { ref, update, set } from "firebase/database";
@@ -82,10 +82,16 @@ export default function HostSelectEvent() {
             </button>
           ))}
         </div>
-        <div style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-          <span className="badge badge-green" style={{ background: "rgba(63,185,80,0.15)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.2)" }}>
-            <span className="live-dot" style={{ width: 5, height: 5 }} /> Host Session Active
-          </span>
+        </div>
+        <div style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span className="badge badge-green" style={{ background: "rgba(63,185,80,0.15)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.2)", width: "100%", justifyContent: "center" }}>
+              <span className="live-dot" style={{ width: 5, height: 5 }} /> Host Session Active
+            </span>
+          </div>
+          <button className="nav-item" onClick={() => { setLoggedOut(); navigate("/host-login"); }} style={{ color: "#F85149", padding: "0.5rem" }}>
+            <LogOut size={15} /> Logout
+          </button>
         </div>
       </aside>
 

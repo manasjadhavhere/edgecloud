@@ -8,7 +8,8 @@ import { useGame } from "../hooks/useGame";
 import BgGrid from "../components/BgGrid";
 import QRDisplay from "../components/QRDisplay";
 import WordCloudViz from "../components/WordCloudViz";
-import { EVENTS, isLoggedIn, getStoredTheme, storeTheme, applyTheme } from "../utils/theme";
+import { LayoutDashboard, Users, ChevronLeft, StopCircle, Zap, LogOut } from "lucide-react";
+import { EVENTS, isLoggedIn, getStoredTheme, storeTheme, applyTheme, setLoggedOut } from "../utils/theme";
 import { Plus, StopCircle, Eye, Users, ChevronLeft, LayoutDashboard, Zap } from "lucide-react";
 
 // ── Sentence editor ──────────────────────────────────────────
@@ -259,6 +260,9 @@ export default function Host() {
         <div style={{ padding: "1rem", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <button className="nav-item" onClick={() => navigate("/select-event")}>
             <ChevronLeft size={15} /> Change Event
+          </button>
+          <button className="nav-item" onClick={() => { setLoggedOut(); navigate("/host-login"); }} style={{ color: "#F85149" }}>
+            <LogOut size={15} /> Logout
           </button>
         </div>
       </aside>

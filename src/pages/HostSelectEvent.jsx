@@ -42,8 +42,8 @@ export default function HostSelectEvent() {
 
       {/* Sidebar */}
       <aside className="admin-sidebar glossy-dark">
-        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+        <div style={{ padding: "1.5rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "center" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 42, width: "auto", objectFit: "contain" }} />
         </div>
         
         <div style={{ padding: "0.75rem", flex: 1 }}>

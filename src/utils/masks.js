@@ -2,55 +2,52 @@
 /**
  * Generates precise SVG shape masks for word cloud silhouettes.
  * Crown → Iconic Brands | Cloud → Best Tech Brands
- * 
- * The mask canvas must have:
- *   - BLACK pixels (#000) where words ARE ALLOWED to be placed
- *   - Transparent pixels where words are NOT allowed
- * wordcloud2 reads pixel data: non-transparent = occupied, transparent = free.
- * We FLIP this by painting the mask black and using it as a "drawn" background.
  */
 
-// Crown SVG — a proper 5-point crown with base band
+// Crown SVG — a precise 5-point crown modeled after the reference image
 const CROWN_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
-  <!-- Crown body: 5 peaks -->
-  <polygon points="
-    50,420
-    50,200
-    200,320
-    400,60
-    600,320
-    750,200
-    750,420
-  " fill="#000"/>
-  <!-- Crown base band -->
-  <rect x="50" y="380" width="700" height="60" rx="8" fill="#000"/>
-  <!-- Decorative gem circles at tips -->
-  <circle cx="50" cy="200" r="22" fill="#000"/>
-  <circle cx="750" cy="200" r="22" fill="#000"/>
-  <circle cx="200" cy="320" r="20" fill="#000"/>
-  <circle cx="600" cy="320" r="20" fill="#000"/>
-  <circle cx="400" cy="60" r="28" fill="#000"/>
-  <!-- Fill gaps between peak bottoms and base (left) -->
-  <polygon points="50,200 200,320 50,420" fill="#000"/>
-  <!-- Fill gaps between peak bottoms and base (right) -->
-  <polygon points="750,200 600,320 750,420" fill="#000"/>
-  <!-- Fill gaps between middle peaks and base (left inner) -->
-  <polygon points="200,320 400,60 400,420" fill="#000"/>
-  <!-- Fill gaps between middle peaks and base (right inner) -->
-  <polygon points="400,60 600,320 400,420" fill="#000"/>
+  <path d="
+    M 100 460
+    Q 400 490 700 460
+    L 780 230
+    Q 710 330 650 340
+    L 580 130
+    Q 510 280 450 290
+    L 400 30
+    L 350 290
+    Q 290 280 220 130
+    L 150 340
+    Q 90 330 20 230
+    Z
+  " fill="#000" stroke="#000" stroke-width="20" stroke-linejoin="round" />
+  <circle cx="20" cy="230" r="15" fill="#000"/>
+  <circle cx="150" cy="340" r="10" fill="#000"/>
+  <circle cx="220" cy="130" r="15" fill="#000"/>
+  <circle cx="400" cy="30" r="20" fill="#000"/>
+  <circle cx="580" cy="130" r="15" fill="#000"/>
+  <circle cx="650" cy="340" r="10" fill="#000"/>
+  <circle cx="780" cy="230" r="15" fill="#000"/>
 </svg>
 `;
 
 // Cloud SVG — a wide, fluffy multi-lobe cloud shape
 const CLOUD_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
-  <ellipse cx="170" cy="330" rx="145" ry="115" fill="#000"/>
-  <ellipse cx="300" cy="250" rx="160" ry="140" fill="#000"/>
-  <ellipse cx="460" cy="220" rx="185" ry="160" fill="#000"/>
-  <ellipse cx="630" cy="270" rx="155" ry="130" fill="#000"/>
-  <ellipse cx="730" cy="360" rx="100" ry="90"  fill="#000"/>
-  <rect x="50"  y="330" width="720" height="120" fill="#000"/>
+  <path d="
+    M 150 350
+    A 100 100 0 0 1 250 200
+    A 120 120 0 0 1 450 150
+    A 110 110 0 0 1 600 220
+    A 90 90 0 0 1 700 350
+    Z
+  " fill="#000" />
+  <rect x="150" y="250" width="550" height="150" rx="40" fill="#000" />
+  <circle cx="150" cy="350" r="70" fill="#000" />
+  <circle cx="700" cy="350" r="70" fill="#000" />
+  <circle cx="400" cy="350" r="100" fill="#000" />
+  <circle cx="550" cy="350" r="80" fill="#000" />
+  <circle cx="250" cy="350" r="80" fill="#000" />
 </svg>
 `;
 

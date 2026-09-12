@@ -67,17 +67,17 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
     
     // Compute a dynamic font scale factor
     const baseFontScale = Math.sqrt(shapeArea / (wordCount * avgChars * 15));
-    const minFont = Math.max(12, Math.round(baseFontScale * 8));
-    const maxFont = Math.min(Math.round(w / 5), Math.round(baseFontScale * 36));
+    const minFont = Math.max(8, Math.round(baseFontScale * 6));
+    const maxFont = Math.min(Math.round(w / 4), Math.round(baseFontScale * 50)); // Allow larger max fonts for anchors
 
     const list = words.map(({ text, value }) => [
       text,
-      Math.round(minFont + ((value / maxVal) ** 0.55) * (maxFont - minFont)),
+      Math.round(minFont + ((value / maxVal) ** 0.8) * (maxFont - minFont)), // increased power for sharper dropoff
     ]);
 
     WordCloud(canvas, {
       list,
-      gridSize:        Math.max(4, Math.round(4 * w / 800)),
+      gridSize:        Math.max(2, Math.round(2 * w / 800)), // smaller grid = denser packing
       weightFactor:    1,
       fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       fontWeight:      "700",
@@ -90,8 +90,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
       clearCanvas:     false,       // IMPORTANT: keep the mask we painted
       drawOutOfBound:  false,
       shrinkToFit:     true,
-      minSize:         10,
+      minSize:         4,           // allow very small words to fill gaps
       shuffle:         true,
+      shape:           "square",
     });
   }, [words, theme, forwardedRef]);
 

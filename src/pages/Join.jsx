@@ -168,20 +168,25 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
   );
 }
 
-function WaitingScreen({ eventId }) {
+function ThankYouScreen({ eventId }) {
   const event = EVENTS[eventId];
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
-      <div className="card fade-in" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center" }}>
-        <CheckCircle size={44} style={{ color: "#3FB950", margin: "0 auto 1rem" }} />
-        {event && <img src={event.logo} alt={event.name} style={{ height: 36, objectFit: "contain", margin: "0 auto 1rem", display: "block" }} />}
-        <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.4rem" }}>Response Submitted</h2>
-        <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.5rem", lineHeight: 1.6 }}>
-          Thank you! The host will reveal the word cloud shortly.
+      <div className="card fade-in" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2.5rem 2rem" }}>
+        <CheckCircle size={48} style={{ color: "#16A34A", margin: "0 auto 1.25rem" }} />
+        {event && <img src={event.logo} alt={event.name} style={{ height: 40, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}
+        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.5rem", color: "var(--text)" }}>Thank You!</h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "2rem", lineHeight: 1.6 }}>
+          Your response has been successfully submitted. Watch the main screen to see the live word cloud!
         </p>
-        <div className="spinner" style={{ margin: "0 auto 0.75rem" }} />
-        <p style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>Waiting for results…</p>
+        <button 
+          className="btn btn-outline" 
+          style={{ width: "100%", borderRadius: "2px" }}
+          onClick={() => window.location.href = "/"}
+        >
+          Back to Home Page
+        </button>
       </div>
     </div>
   );
@@ -194,9 +199,7 @@ export default function Join() {
   const [submitted, setSubmitted]             = useState(false);
   const { game, loading, error } = useGame(gameId);
 
-  useEffect(() => {
-    if (game?.status === "ended") navigate(`/results/${gameId}`, { replace: true });
-  }, [game?.status, gameId, navigate]);
+  // Removed the useEffect that redirects players to the results page.
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -224,7 +227,7 @@ export default function Join() {
   }
 
   if (!participantName) return <NameEntry onSubmit={handleNameSubmit} eventId={game?.eventId} />;
-  if (submitted)        return <WaitingScreen eventId={game?.eventId} />;
+  if (submitted)        return <ThankYouScreen eventId={game?.eventId} />;
 
   return (
     <AnswerForm

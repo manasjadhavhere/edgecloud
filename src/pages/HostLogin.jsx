@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { isLoggedIn, setLoggedIn } from "../utils/theme";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, ArrowLeft } from "lucide-react";
 
 export default function HostLogin() {
   const navigate = useNavigate();
@@ -73,6 +73,21 @@ export default function HostLogin() {
           animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-40px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(40px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-slide-left {
+          animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-slide-right {
+          animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
       `}</style>
 
       {/* ══════════════════════════════════════════
@@ -158,18 +173,33 @@ export default function HostLogin() {
       >
         {/* ── LEFT COLUMN ── */}
         <div
-          className="lp-left-col"
+          className="lp-left-col animate-slide-left"
           style={{
             width: "42%", maxWidth: "580px",
             display: "flex", flexDirection: "column",
             justifyContent: "space-between",
             paddingTop: "2.25rem",
             paddingBottom: "3rem",
-            paddingRight: "2rem"
+            paddingRight: "2rem",
+            position: "relative"
           }}
         >
+          {/* Back Button */}
+          <button 
+            onClick={() => navigate("/")}
+            style={{ 
+              position: "absolute", top: "1rem", left: "0",
+              background: "transparent", border: "none", color: "#6B7280",
+              display: "flex", alignItems: "center", gap: "6px",
+              cursor: "pointer", fontSize: "0.85rem", fontWeight: 600,
+              padding: "8px 0"
+            }}
+          >
+            <ArrowLeft size={16} /> Back to Home
+          </button>
+
           {/* ET EDGE LOGO */}
-          <div>
+          <div style={{ marginTop: "3rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
               <div
                 className="lp-logo-et"
@@ -296,7 +326,9 @@ export default function HostLogin() {
             zIndex: 5
           }}
         >
-          <div style={{
+          <div 
+            className="animate-slide-right"
+            style={{
             background: "rgba(255,255,255,0.85)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",

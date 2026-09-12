@@ -82,11 +82,11 @@ function ParticipantList({ responses, game }) {
   const [showAll, setShowAll] = useState(false);
   const seen = new Set();
   const uniqueResponses = responses.filter((r) => { if (seen.has(r.name)) return false; seen.add(r.name); return true; });
-  
+
   const joinedNamesSet = new Set(Object.values(game?.participants || {}));
   uniqueResponses.forEach((r) => joinedNamesSet.add(r.name));
   const joinedNames = Array.from(joinedNamesSet);
-  
+
   // Latest 10 joined
   const displayNames = joinedNames.slice(-10).reverse();
   const hiddenCount = joinedNames.length - displayNames.length;
@@ -317,7 +317,7 @@ export default function Host() {
                 {error && <p style={{ color: "#F85149", fontSize: "0.82rem", marginTop: "0.75rem" }}>{error}</p>}
                 <div style={{ marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
                   <button className="btn btn-primary btn-lg" onClick={handleCreate} disabled={creating}>
-                    {creating ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <><Eye size={16} /> Launch Game & Show QR</>}
+                    {creating ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <> Launch Game & Show QR</>}
                   </button>
                 </div>
               </div>

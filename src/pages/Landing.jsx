@@ -195,7 +195,7 @@ export default function Landing() {
         <div
           className="lp-left-col"
           style={{
-            width: "42%", maxWidth: "540px",
+            width: "42%", maxWidth: "580px",
             display: "flex", flexDirection: "column",
             justifyContent: "space-between",
             paddingTop: "2.25rem",
@@ -241,18 +241,12 @@ export default function Landing() {
           {/* HERO SECTION */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: "0.5rem" }}>
 
-            {/* Accent Dashes */}
-            <div style={{ display: "flex", gap: "7px", marginBottom: "1.1rem" }}>
-              <div style={{ width: "28px", height: "3.5px", background: "#D32F2F", borderRadius: "99px" }} />
-              <div style={{ width: "28px", height: "3.5px", background: "#6366F1", borderRadius: "99px" }} />
-            </div>
-
             {/* Main Headline */}
             <h1
               className="lp-headline"
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: "clamp(2.4rem, 3.7vw, 4.1rem)",
+                fontSize: "clamp(2.4rem, 3.7vw, 4rem)",
                 fontWeight: 800,
                 lineHeight: 1.1,
                 color: "#1A1F36",
@@ -260,7 +254,7 @@ export default function Landing() {
                 letterSpacing: "-0.02em"
               }}
             >
-              Turn Your Audience<br />
+              <span style={{ whiteSpace: "nowrap" }}>Turn Your Audience</span><br />
               Into a{" "}
               <span style={{
                 background: "linear-gradient(88deg, #E8304A 0%, #FF9000 100%)",
@@ -425,7 +419,8 @@ export default function Landing() {
               width: "88%",
               maxWidth: "530px",
               objectFit: "contain",
-              filter: "drop-shadow(0 10px 40px rgba(0,0,0,0.2))"
+              filter: "drop-shadow(0 10px 40px rgba(0,0,0,0.2))",
+              transform: "translateY(-60px)"
             }}
           />
         </div>

@@ -313,10 +313,10 @@ textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
 
 /* Glossy Dark Sidebar variant */
 .admin-sidebar.glossy-dark {
-  background: linear-gradient(180deg, #1A1C23 0%, #0D0E12 100%);
-  border-right: 1px solid #2A2D35;
+  background: #000000;
+  border-right: 1px solid #1A1A1A;
   color: #fff;
-  box-shadow: inset -1px 0 0 rgba(255,255,255,0.05);
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.02);
 }
 .glossy-dark .nav-item.dark-nav {
   color: #94A3B8;

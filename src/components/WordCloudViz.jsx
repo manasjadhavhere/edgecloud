@@ -56,23 +56,32 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
       ctx.clearRect(0, 0, w, h);
     }
 
-    // Scale font sizes to fill the available area well regardless of word count
-    const wordCount = words.length;
-    const maxVal    = words[0]?.value || 1;
-    const minVal    = words[words.length - 1]?.value || 1;
+    // Force extreme density: if there are fewer than 250 words, duplicate smaller words as filler
+    let processedWords = [...words];
+    const MIN_DENSITY = 350;
     
-    // Use area-based scaling so fewer words = bigger fonts (filling the shape)
-    const shapeArea = maskCanvas ? (w * h * 0.45) : (w * h * 0.7); // approx usable px
-    const avgChars  = words.reduce((a, b) => a + b.text.length, 0) / wordCount;
-    
-    // Compute a dynamic font scale factor
-    const baseFontScale = Math.sqrt(shapeArea / (wordCount * avgChars * 15));
-    const minFont = Math.max(8, Math.round(baseFontScale * 6));
-    const maxFont = Math.min(Math.round(w / 4), Math.round(baseFontScale * 50)); // Allow larger max fonts for anchors
+    if (processedWords.length < MIN_DENSITY && processedWords.length > 0) {
+      const fillerNeeded = MIN_DENSITY - processedWords.length;
+      for (let i = 0; i < fillerNeeded; i++) {
+        // Pick words to duplicate (favor lower-middle frequency words for background fill)
+        const sourceIdx = Math.floor(Math.random() * processedWords.length);
+        processedWords.push({
+          text: processedWords[sourceIdx].text,
+          value: processedWords[sourceIdx].value * 0.1 // very small weight for filler
+        });
+      }
+    }
 
-    const list = words.map(({ text, value }) => [
+    const wordCount = processedWords.length;
+    const maxVal    = processedWords[0]?.value || 1;
+    
+    // Compute font scales for anchor words vs filler words
+    const minFont = 6;
+    const maxFont = Math.min(Math.round(w / 3.5), 180); // massive anchors
+
+    const list = processedWords.map(({ text, value }) => [
       text,
-      Math.round(minFont + ((value / maxVal) ** 0.8) * (maxFont - minFont)), // increased power for sharper dropoff
+      Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)), // steep power curve for huge anchors & tiny fillers
     ]);
 
     WordCloud(canvas, {

@@ -2,57 +2,54 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
-import { ref, push, set } from "firebase/database";
+import { ref, push } from "firebase/database";
 import { useGame } from "../hooks/useGame";
 import { countBlanks } from "../utils/wordCount";
-import FloatingOrbs from "../components/FloatingOrbs";
-import { Send, Loader, CheckCircle } from "lucide-react";
+import BgGrid from "../components/BgGrid";
+import { EVENTS } from "../utils/theme";
+import { Send, Loader, CheckCircle, ArrowRight } from "lucide-react";
 
-// ── Name entry screen ────────────────────────────────────────
-function NameEntry({ onSubmit }) {
+function NameEntry({ onSubmit, eventId }) {
   const [name, setName] = useState("");
+  const event = EVENTS[eventId];
 
   return (
-    <div className="page">
-      <FloatingOrbs />
-      <div className="container text-center fade-in" style={{ maxWidth: 440 }}>
-        {/* Logo */}
-        <img
-          src="/EdgeCloud Image.png"
-          alt="EdgeCloud"
-          style={{
-            width: "auto",
-            maxWidth: 220,
-            height: "auto",
-            objectFit: "contain",
-            display: "block",
-            margin: "0 auto 1.5rem",
-          }}
-        />
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+      <BgGrid />
+      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="fade-in">
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+          {event ? (
+            <img src={event.logo} alt={event.name} style={{ height: 48, width: "auto", objectFit: "contain", marginBottom: "1rem" }} />
+          ) : (
+            <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "1rem" }} />
+          )}
+          <span className="badge badge-green"><span className="live-dot" style={{ width: 6, height: 6 }} /> Live Session</span>
+        </div>
 
-        <p className="text-muted" style={{ marginBottom: "2.5rem" }}>
-          Welcome! Enter your name to join the game.
-        </p>
-
-        <div className="card" style={{ textAlign: "left" }}>
-          <label style={{ display: "block", fontWeight: 700, marginBottom: "0.5rem" }}>
-            Your Name
+        <div className="card">
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.35rem" }}>Enter Your Name</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+            Your name will appear on the host screen when you respond.
+          </p>
+          <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
+            Name
           </label>
           <input
             className="input"
-            placeholder="e.g. Priya Sharma"
+            placeholder="Your name…"
             value={name}
             autoFocus
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && name.trim() && onSubmit(name.trim())}
+            style={{ marginBottom: "1rem" }}
           />
           <button
             className="btn btn-primary"
-            style={{ width: "100%", marginTop: "1rem" }}
+            style={{ width: "100%" }}
             disabled={!name.trim()}
             onClick={() => onSubmit(name.trim())}
           >
-            Join the Game →
+            Continue <ArrowRight size={15} />
           </button>
         </div>
       </div>
@@ -60,70 +57,55 @@ function NameEntry({ onSubmit }) {
   );
 }
 
-// ── Answer form ──────────────────────────────────────────────
-function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
-  const blanks = countBlanks(sentence);
-  const [answers, setAnswers] = useState(Array(blanks).fill(""));
+function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId }) {
+  const blanks  = countBlanks(sentence);
+  const [answers, setAnswers]     = useState(Array(blanks).fill(""));
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]         = useState("");
+  const event = EVENTS[eventId];
 
-  function setAnswer(i, val) {
-    setAnswers((prev) => {
-      const next = [...prev];
-      next[i] = val;
-      return next;
-    });
-  }
+  function setAnswer(i, val) { setAnswers((p) => { const n=[...p]; n[i]=val; return n; }); }
 
   async function handleSubmit() {
-    if (answers.some((a) => !a.trim())) {
-      setError("Please fill in all the blanks before submitting.");
-      return;
-    }
-    setError("");
-    setSubmitting(true);
+    if (answers.some((a) => !a.trim())) { setError("Please fill in all the blanks before submitting."); return; }
+    setError(""); setSubmitting(true);
     try {
       await push(ref(db, `games/${gameId}/responses`), {
-        name: participantName,
-        words: answers.map((a) => a.trim()),
-        submittedAt: Date.now(),
+        name: participantName, words: answers.map((a) => a.trim()), submittedAt: Date.now(),
       });
       onSubmitted();
     } catch (err) {
-      setError("Submission failed: " + err.message);
-      setSubmitting(false);
+      setError("Submission failed: " + err.message); setSubmitting(false);
     }
   }
 
-  // Build sentence parts for rendering with inputs
   const parts = sentence.split("__");
   let blankIdx = 0;
 
   return (
-    <div style={{ position: "relative", zIndex: 1 }}>
-      <FloatingOrbs />
-      <div className="page page-top">
-        <div className="container" style={{ paddingBottom: "3rem" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      <BgGrid />
+      {/* Topbar */}
+      <div style={{ position: "relative", zIndex: 1, height: 52, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", padding: "0 1.5rem", background: "var(--bg-secondary)", gap: "1rem" }}>
+        {event ? (
+          <img src={event.logo} alt={event.name} style={{ height: 28, width: "auto", objectFit: "contain" }} />
+        ) : (
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 24, width: "auto", objectFit: "contain" }} />
+        )}
+        <div style={{ flex: 1 }} />
+        <span className="badge badge-green"><span className="live-dot" style={{ width: 5, height: 5 }} /> LIVE</span>
+        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+          Playing as <strong style={{ color: "var(--text)" }}>{participantName}</strong>
+        </span>
+      </div>
 
-          {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <img
-              src="/EdgeCloud Image.png"
-              alt="EdgeCloud"
-              style={{ height: 36, width: "auto", objectFit: "contain", marginBottom: "0.35rem" }}
-            />
-            <div className="badge badge-blue" style={{ marginTop: "0.25rem" }}>
-              <span className="live-dot" style={{ width: 6, height: 6 }} />
-              LIVE GAME
-            </div>
-          </div>
+      <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.5rem" }}>
+        <div style={{ width: "100%", maxWidth: 600, display: "flex", flexDirection: "column", gap: "1.25rem" }} className="fade-in">
 
           {/* Sentence card */}
-          <div className="card" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
-            <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>
-              Complete the sentence
-            </p>
-            <p className="sentence-display">
+          <div className="card">
+            <p className="label-caps" style={{ marginBottom: "1rem" }}>Complete the sentence</p>
+            <p className="sentence-display" style={{ textAlign: "center" }}>
               {parts.map((part, i) => {
                 const isLast = i === parts.length - 1;
                 const idx = blankIdx;
@@ -137,7 +119,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
                         placeholder={`word ${idx + 1}`}
                         value={answers[idx] || ""}
                         onChange={(e) => setAnswer(idx, e.target.value)}
-                        style={{ minWidth: Math.max(100, (answers[idx]?.length || 6) * 14) }}
+                        style={{ minWidth: Math.max(90, (answers[idx]?.length || 5) * 14) }}
                       />
                     )}
                   </span>
@@ -146,16 +128,14 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
             </p>
           </div>
 
-          {/* Individual input cards for each blank */}
+          {/* Separate inputs for each blank */}
           {blanks > 1 && (
-            <div className="card" style={{ marginBottom: "1.5rem" }}>
-              <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>
-                Your answers
-              </p>
-              <div className="flex flex-col gap-2">
+            <div className="card">
+              <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Your answers</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 {Array.from({ length: blanks }).map((_, i) => (
                   <div key={i}>
-                    <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: "0.3rem" }}>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.4rem" }}>
                       Blank {i + 1}
                     </label>
                     <input
@@ -170,16 +150,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
             </div>
           )}
 
-          {/* Greeting */}
-          <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
-            Responding as <strong style={{ color: "var(--text)" }}>{participantName}</strong>
-          </p>
-
-          {error && (
-            <p style={{ color: "#EF4444", fontSize: "0.85rem", textAlign: "center", marginBottom: "0.75rem" }}>
-              {error}
-            </p>
-          )}
+          {error && <p style={{ color: "#F85149", fontSize: "0.85rem", textAlign: "center" }}>{error}</p>}
 
           <button
             className="btn btn-primary btn-lg"
@@ -187,7 +158,9 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
             onClick={handleSubmit}
             disabled={submitting || answers.some((a) => !a.trim())}
           >
-            {submitting ? <><Loader size={18} style={{ animation: "spin 0.9s linear infinite" }} /> Submitting…</> : <><Send size={18} /> Submit My Answer</>}
+            {submitting
+              ? <><Loader size={16} style={{ animation: "spin 0.8s linear infinite" }} /> Submitting…</>
+              : <><Send size={16} /> Submit Answer</>}
           </button>
         </div>
       </div>
@@ -195,101 +168,70 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted }) {
   );
 }
 
-// ── Waiting screen ───────────────────────────────────────────
-function WaitingScreen() {
+function WaitingScreen({ eventId }) {
+  const event = EVENTS[eventId];
   return (
-    <div style={{ position: "relative" }}>
-      <FloatingOrbs />
-      <div className="page text-center">
-        <div className="card fade-in" style={{ maxWidth: 420, margin: "0 auto" }}>
-          <CheckCircle size={56} style={{ color: "#10B981", margin: "0 auto 1rem" }} />
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.8rem", marginBottom: "0.5rem" }}>
-            Answer submitted! 🎉
-          </h2>
-          <p className="text-muted" style={{ marginBottom: "2rem" }}>
-            Great job! Hang tight — the host will reveal the word cloud soon.
-          </p>
-          <div className="spinner" />
-          <p className="text-muted" style={{ marginTop: "1rem", fontSize: "0.83rem" }}>
-            Waiting for results…
-          </p>
-        </div>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+      <BgGrid />
+      <div className="card fade-in" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center" }}>
+        <CheckCircle size={44} style={{ color: "#3FB950", margin: "0 auto 1rem" }} />
+        {event && <img src={event.logo} alt={event.name} style={{ height: 36, objectFit: "contain", margin: "0 auto 1rem", display: "block" }} />}
+        <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.4rem" }}>Response Submitted</h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+          Thank you! The host will reveal the word cloud shortly.
+        </p>
+        <div className="spinner" style={{ margin: "0 auto 0.75rem" }} />
+        <p style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>Waiting for results…</p>
       </div>
     </div>
   );
 }
 
-// ── Main Join page ───────────────────────────────────────────
 export default function Join() {
   const { gameId } = useParams();
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
   const [participantName, setParticipantName] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
-
+  const [submitted, setSubmitted]             = useState(false);
   const { game, loading, error } = useGame(gameId);
 
-  // Auto-redirect when host ends game
   useEffect(() => {
-    if (game?.status === "ended") {
-      navigate(`/results/${gameId}`, { replace: true });
-    }
+    if (game?.status === "ended") navigate(`/results/${gameId}`, { replace: true });
   }, [game?.status, gameId, navigate]);
 
-  if (loading) {
-    return (
-      <div style={{ position: "relative" }}>
-        <FloatingOrbs />
-        <div className="page">
-          <div className="spinner" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="spinner" />
+    </div>
+  );
 
-  if (error || !game) {
-    return (
-      <div style={{ position: "relative" }}>
-        <FloatingOrbs />
-        <div className="page text-center">
-          <div className="card" style={{ maxWidth: 360 }}>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", marginBottom: "0.5rem" }}>
-              Game not found
-            </h2>
-            <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-              Double-check your Game ID or scan the QR again.
-            </p>
-            <button className="btn btn-primary" onClick={() => navigate("/")}>
-              Back to Home
-            </button>
-          </div>
-        </div>
+  if (error || !game) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+      <BgGrid />
+      <div className="card" style={{ position: "relative", zIndex: 1, maxWidth: 360, width: "100%", textAlign: "center" }}>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.4rem" }}>Session Not Found</h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
+          Double-check your Game ID or scan the QR code again.
+        </p>
+        <button className="btn btn-primary" onClick={() => navigate("/")}>Back to Home</button>
       </div>
-    );
-  }
+    </div>
+  );
 
   async function handleNameSubmit(name) {
     setParticipantName(name);
-    try {
-      // Use push or sanitize the name for set. Using push is simpler to avoid invalid Firebase keys.
-      await push(ref(db, `games/${gameId}/participants`), name);
-    } catch (err) {
-      console.error("Failed to register participant:", err);
-    }
+    try { await push(ref(db, `games/${gameId}/participants`), name); }
+    catch (err) { console.error("Participant registration failed:", err); }
   }
 
-  if (!participantName) {
-    return <NameEntry onSubmit={handleNameSubmit} />;
-  }
-
-  if (submitted) {
-    return <WaitingScreen />;
-  }
+  if (!participantName) return <NameEntry onSubmit={handleNameSubmit} eventId={game?.eventId} />;
+  if (submitted)        return <WaitingScreen eventId={game?.eventId} />;
 
   return (
     <AnswerForm
       sentence={game.sentence}
       participantName={participantName}
       gameId={gameId}
+      eventId={game?.eventId}
       onSubmitted={() => setSubmitted(true)}
     />
   );

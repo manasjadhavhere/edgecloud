@@ -2,11 +2,8 @@
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { ref, onValue, off } from "firebase/database";
+import { applyTheme } from "../utils/theme";
 
-/**
- * Real-time listener hook for a single game.
- * Returns the game metadata and all responses as arrays.
- */
 export function useGame(gameId) {
   const [game, setGame] = useState(null);
   const [responses, setResponses] = useState([]);
@@ -15,57 +12,36 @@ export function useGame(gameId) {
 
   useEffect(() => {
     if (!gameId) return;
-
     const gameRef = ref(db, `games/${gameId}`);
-
     const unsubscribe = onValue(
       gameRef,
       (snapshot) => {
-        if (!snapshot.exists()) {
-          setError("Game not found");
-          setLoading(false);
-          return;
-        }
+        if (!snapshot.exists()) { setError("Game not found"); setLoading(false); return; }
         const data = snapshot.val();
         const { responses: rawResponses, ...meta } = data;
-
         setGame(meta);
-        setResponses(
-          rawResponses
-            ? Object.entries(rawResponses).map(([id, val]) => ({ id, ...val }))
-            : []
-        );
+        setResponses(rawResponses
+          ? Object.entries(rawResponses).map(([id, val]) => ({ id, ...val }))
+          : []);
         setLoading(false);
         setError(null);
       },
-      (err) => {
-        setError(err.message);
-        setLoading(false);
-      }
+      (err) => { setError(err.message); setLoading(false); }
     );
-
     return () => off(gameRef, "value", unsubscribe);
   }, [gameId]);
 
+  // Apply theme from game data (for participant side)
   useEffect(() => {
-    if (game?.eventId) {
-      document.body.className = `theme-${game.eventId}`;
-    } else {
-      document.body.className = "";
-    }
+    if (game?.eventId) applyTheme(game.eventId);
   }, [game?.eventId]);
 
   return { game, responses, loading, error };
 }
 
-/**
- * Hook to watch the currently active game ID from Firebase.
- * The host writes to /activeGame when they start a game.
- */
 export function useActiveGame() {
   const [activeGameId, setActiveGameId] = useState(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const activeRef = ref(db, "activeGame");
     const unsubscribe = onValue(activeRef, (snapshot) => {
@@ -74,6 +50,5 @@ export function useActiveGame() {
     });
     return () => off(activeRef, "value", unsubscribe);
   }, []);
-
   return { activeGameId, loading };
 }

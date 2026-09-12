@@ -1,27 +1,16 @@
 // src/components/Top10Table.jsx
 import { useEffect, useState } from "react";
 
-const RANK_COLORS = [
-  { bg: "linear-gradient(135deg,#F59E0B,#EF4444)", color: "#fff" },  // 1 — gold
-  { bg: "linear-gradient(135deg,#9CA3AF,#6B7280)", color: "#fff" },  // 2 — silver
-  { bg: "linear-gradient(135deg,#B45309,#92400E)", color: "#fff" },  // 3 — bronze
-];
-
 export default function Top10Table({ words }) {
   const [visible, setVisible] = useState(0);
-  const top10 = words.slice(0, 10);
+  const top10  = words.slice(0, 10);
   const maxVal = top10[0]?.value || 1;
 
-  // Stagger rows appearing one by one
   useEffect(() => {
     setVisible(0);
     if (top10.length === 0) return;
     let i = 0;
-    const timer = setInterval(() => {
-      i += 1;
-      setVisible(i);
-      if (i >= top10.length) clearInterval(timer);
-    }, 120);
+    const timer = setInterval(() => { i += 1; setVisible(i); if (i >= top10.length) clearInterval(timer); }, 100);
     return () => clearInterval(timer);
   }, [words.length]);
 
@@ -33,40 +22,30 @@ export default function Top10Table({ words }) {
         <tr>
           <th style={{ width: 50 }}>#</th>
           <th>Word</th>
-          <th style={{ width: 200 }}>Frequency</th>
-          <th style={{ width: 60, textAlign: "right" }}>Count</th>
+          <th style={{ width: 220 }}>Frequency</th>
+          <th style={{ width: 64, textAlign: "right" }}>Count</th>
         </tr>
       </thead>
       <tbody>
         {top10.map((item, i) => {
           const pct = Math.round((item.value / maxVal) * 100);
-          const rankStyle = RANK_COLORS[i] || {
-            bg: "linear-gradient(135deg,#E8213C,#F97316)",
-            color: "#fff",
-          };
+          const isTop3 = i < 3;
           return (
             <tr
               key={item.text}
               style={{
                 opacity: i < visible ? 1 : 0,
-                transform: i < visible ? "translateX(0)" : "translateX(-20px)",
-                transition: "opacity 0.4s ease, transform 0.4s ease",
+                transform: i < visible ? "translateX(0)" : "translateX(-16px)",
+                transition: "opacity 0.35s ease, transform 0.35s ease",
               }}
             >
               <td>
-                <div
-                  className="rank-num"
-                  style={{ background: rankStyle.bg, color: rankStyle.color }}
-                >
+                <div className={`rank-num ${isTop3 ? "top" : ""}`}>
                   {i + 1}
                 </div>
               </td>
               <td>
-                <span style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "1.05rem",
-                  color: "var(--text)",
-                }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: "0.95rem", fontWeight: 700, color: "var(--text)" }}>
                   {item.text}
                 </span>
               </td>
@@ -78,7 +57,7 @@ export default function Top10Table({ words }) {
                 </div>
               </td>
               <td style={{ textAlign: "right" }}>
-                <span className="badge badge-blue">{item.value}</span>
+                <span className="badge badge-accent">{item.value}</span>
               </td>
             </tr>
           );

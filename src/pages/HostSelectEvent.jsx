@@ -1,115 +1,113 @@
 // src/pages/HostSelectEvent.jsx
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import FloatingOrbs from "../components/FloatingOrbs";
-import { ChevronRight, Calendar } from "lucide-react";
+import BgGrid from "../components/BgGrid";
+import { EVENTS, storeTheme, getStoredTheme, isLoggedIn, applyTheme } from "../utils/theme";
+import { ChevronRight, Layers } from "lucide-react";
 
 export default function HostSelectEvent() {
   const navigate = useNavigate();
 
-  const events = [
-    {
-      id: "iconic-brands",
-      name: "ET Edge Iconic Brands 2026",
-      theme: "iconic", // Will map to CSS classes
-      colors: ["#C5A059", "#8B1818"],
-    },
-    {
-      id: "best-tech",
-      name: "ET Edge Best Tech Brands 2026",
-      theme: "tech",
-      colors: ["#00529B", "#00AEEF"],
-    },
-  ];
+  useEffect(() => {
+    if (!isLoggedIn()) { navigate("/host-login", { replace: true }); return; }
+    // Re-apply stored theme if returning to this page
+    const stored = getStoredTheme();
+    if (stored) applyTheme(stored);
+  }, [navigate]);
 
   function selectEvent(eventId) {
-    // Navigate to host compose and pass eventId in state
+    storeTheme(eventId);
     navigate("/host", { state: { eventId } });
   }
 
   return (
-    <>
-      <FloatingOrbs />
-      <div className="page" style={{ padding: "2rem 1rem", minHeight: "100vh", justifyContent: "center" }}>
-        <div className="fade-in" style={{ width: "100%", maxWidth: 800, textAlign: "center" }}>
-          <h2 className="display-title" style={{ fontSize: "clamp(2rem, 5vw, 3rem)", marginBottom: "1rem" }}>
-            Select Event Theme
-          </h2>
-          <p className="text-muted" style={{ marginBottom: "3rem", fontSize: "1.1rem" }}>
-            Choose the event context for your game. The branding will adapt automatically.
-          </p>
+    <div className="admin-layout">
+      <BgGrid />
 
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}>
-            {events.map((evt) => (
+      {/* Sidebar */}
+      <aside className="admin-sidebar">
+        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid var(--border)" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+        </div>
+        <div style={{ padding: "0.75rem", flex: 1 }}>
+          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Events</p>
+          {Object.values(EVENTS).map((evt) => (
+            <button key={evt.id} className="nav-item" onClick={() => selectEvent(evt.id)}>
+              <img src={evt.logo} alt={evt.shortName} style={{ width: 20, height: 20, objectFit: "contain", borderRadius: 3 }} />
+              <span style={{ fontSize: "0.82rem" }}>{evt.shortName}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ padding: "1rem", borderTop: "1px solid var(--border)" }}>
+          <span className="badge badge-green"><span className="live-dot" style={{ width: 5, height: 5 }} /> Host Session Active</span>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="admin-main">
+        <div className="admin-topbar">
+          <Layers size={16} color="var(--text-muted)" />
+          <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>Select Event</span>
+        </div>
+        <div className="admin-content">
+          <div style={{ marginBottom: "2rem" }}>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.4rem" }}>Choose an Event</h1>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
+              Select the event to configure the word-cloud game theme, colors, and branding.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
+            {Object.values(EVENTS).map((evt) => (
               <div
                 key={evt.id}
                 className="card scale-in"
-                style={{
-                  flex: "1 1 300px",
-                  maxWidth: "350px",
-                  cursor: "pointer",
-                  padding: "2rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                }}
+                style={{ cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "1.25rem" }}
                 onClick={() => selectEvent(evt.id)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-6px)";
-                  e.currentTarget.style.boxShadow = "var(--shadow-lg)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "var(--shadow-md)";
-                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
               >
-                <div
-                  style={{
-                    width: 64, height: 64,
-                    borderRadius: 16,
-                    background: `linear-gradient(135deg, ${evt.colors[0]}, ${evt.colors[1]})`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: "1.5rem",
-                    boxShadow: `0 8px 24px ${evt.colors[0]}40`,
-                  }}
-                >
-                  <Calendar size={32} color="#fff" />
+                {/* Logo */}
+                <div style={{
+                  height: 80, borderRadius: "var(--radius-md)",
+                  background: "var(--bg-secondary)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "1px solid var(--border)", overflow: "hidden", padding: "0.75rem",
+                }}>
+                  <img
+                    src={evt.logo}
+                    alt={evt.name}
+                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
+                  />
                 </div>
-                <h3 className="section-title" style={{ fontSize: "1.3rem", marginBottom: "1rem" }}>
-                  {evt.name}
-                </h3>
-                
-                <div style={{ flex: 1 }} />
-                
+
+                <div>
+                  <p className="label-caps" style={{ marginBottom: "0.35rem" }}>Event</p>
+                  <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.3rem" }}>{evt.name}</h3>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                    Word cloud will use the {evt.id === "iconic" ? "crown" : "cloud"} shape with event-specific branding.
+                  </p>
+                </div>
+
+                {/* Color preview */}
+                <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: evt.colors.accent }} />
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: evt.colors.dark }} />
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginLeft: "0.2rem" }}>Event palette</span>
+                </div>
+
                 <button
-                  className="btn"
-                  style={{
-                    width: "100%",
-                    background: `linear-gradient(135deg, ${evt.colors[0]}, ${evt.colors[1]})`,
-                    color: "white"
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectEvent(evt.id);
-                  }}
+                  className="btn btn-primary"
+                  style={{ marginTop: "auto" }}
+                  onClick={(e) => { e.stopPropagation(); selectEvent(evt.id); }}
                 >
-                  Continue <ChevronRight size={18} />
+                  Launch Game <ChevronRight size={15} />
                 </button>
               </div>
             ))}
           </div>
-          
-          <div style={{ marginTop: "3rem" }}>
-            <button 
-              type="button"
-              className="btn btn-ghost btn-sm" 
-              onClick={() => navigate("/host-login")}
-            >
-              Back
-            </button>
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

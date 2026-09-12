@@ -1,109 +1,94 @@
 // src/components/WordCloudViz.jsx
-import { useEffect, useRef } from "react";
-import { getMaskImage } from "../utils/masks";
+import { useEffect, useRef, useCallback } from "react";
+import { getMaskCanvas } from "../utils/masks";
 
 const THEME_COLORS = {
-  iconic: ["#C5A059", "#8B1818", "#E8C179", "#5A0F0F", "#D4AF37", "#990000", "#FFD700", "#A52A2A"],
-  tech: ["#00529B", "#00AEEF", "#40C4FF", "#003D73", "#00BFFF", "#1E90FF", "#87CEFA", "#4682B4"],
-  default: ["#E8213C", "#8B5CF6", "#F97316", "#10B981", "#EC4899", "#F59E0B", "#06B6D4", "#6366F1"],
+  iconic: ["#C5A059","#E8C179","#8B1818","#D4AF37","#A0522D","#CD853F","#B8860B","#8B6914"],
+  tech:   ["#00529B","#00AEEF","#40C4FF","#003D73","#0288D1","#01579B","#29B6F6","#4FC3F7"],
+  default:["#C5A059","#8B1818","#00529B","#00AEEF","#3FB950","#F85149","#D4AF37","#40C4FF"],
 };
 
 export default function WordCloudViz({ words, forwardedRef, theme = "default" }) {
-  const canvasRef = useRef(null);
+  const canvasRef    = useRef(null);
   const containerRef = useRef(null);
+  const cleanupRef   = useRef(null);
 
-  useEffect(() => {
+  const drawCloud = useCallback(async () => {
     if (!words || words.length === 0) return;
-
     const container = containerRef.current;
     if (!container) return;
 
     const colors = THEME_COLORS[theme] || THEME_COLORS.default;
+    const { default: WordCloud } = await import("wordcloud");
 
-    import("wordcloud").then((module) => {
-      const WordCloud = module.default;
+    const w = container.offsetWidth  || 800;
+    const h = container.offsetHeight || 450;
 
-      const w = container.offsetWidth;
-      const h = container.offsetHeight;
+    const canvas = canvasRef.current;
+    canvas.width  = w;
+    canvas.height = h;
+    if (forwardedRef) forwardedRef.current = canvas;
 
-      const canvas = canvasRef.current;
-      canvas.width = w;
-      canvas.height = h;
+    const maxVal  = words[0]?.value || 1;
+    const minFont = Math.max(14, Math.round(w / 60));
+    const maxFont = Math.min(Math.round(w / 6), 110);
 
-      if (forwardedRef) forwardedRef.current = canvas;
+    const list = words.map(({ text, value }) => [
+      text,
+      Math.round(minFont + ((value / maxVal) ** 0.6) * (maxFont - minFont)),
+    ]);
 
-      const maxVal = words[0]?.value || 1;
-      const minFont = 18;
-      const maxFont = Math.min(w / 5, 96);
+    // Get mask
+    const maskCanvas = await getMaskCanvas(theme, w, h);
 
-      const list = words.map(({ text, value }) => [
-        text,
-        Math.round(minFont + ((value / maxVal) * (maxFont - minFont))),
-      ]);
+    if (maskCanvas) {
+      // Paint mask as the initial canvas state
+      // wordcloud2 respects pixels with alpha > 0 (occupied) and alpha === 0 (free)
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, w, h);
 
-      const renderCloud = (maskCanvas = null) => {
-        let options = {
-          list,
-          gridSize: Math.round(8 * w / 900),
-          weightFactor: 1,
-          fontFamily: "'Montserrat', sans-serif",
-          color: (_word, _weight, _fontSize, _distance, theta) => {
-            return colors[Math.floor((theta / (2 * Math.PI)) * colors.length) % colors.length];
-          },
-          rotateRatio: 0, // Keep text horizontal for B2B readability
-          backgroundColor: "transparent",
-          drawOutOfBound: false,
-          shrinkToFit: true,
-        };
+      // Fill canvas with a near-transparent pixel so wordcloud2 treats it as "occupied"
+      ctx.fillStyle = "rgba(1,1,1,0.01)";
+      ctx.fillRect(0, 0, w, h);
 
-        if (maskCanvas) {
-          // If a mask canvas is provided, wordcloud2 can use it via the 'clearCanvas: false' trick
-          // but we will draw the mask on our main canvas using near-transparent pixels.
-          const ctx = canvas.getContext("2d");
-          ctx.clearRect(0, 0, w, h);
-          // Draw inverted mask: filled with 1% opacity, except for the shape which is 0% opacity.
-          ctx.fillStyle = "rgba(255, 255, 255, 0.02)";
-          ctx.fillRect(0, 0, w, h);
-          ctx.globalCompositeOperation = "destination-out";
-          ctx.drawImage(maskCanvas, 0, 0, w, h);
-          ctx.globalCompositeOperation = "source-over";
-          
-          options.clearCanvas = false;
-        }
+      // Punch through the mask shape to alpha=0 ("free" zone)
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.drawImage(maskCanvas, 0, 0, w, h);
+      ctx.globalCompositeOperation = "source-over";
+    }
 
-        WordCloud(canvas, options);
-      };
+    // Cancel previous wordcloud if any
+    if (cleanupRef.current) { try { WordCloud.stop?.(); } catch(_) {} }
 
-      getMaskImage(theme).then((img) => {
-        if (img) {
-          // Create an offscreen canvas to scale the image
-          const maskCanvas = document.createElement("canvas");
-          maskCanvas.width = w;
-          maskCanvas.height = h;
-          const mctx = maskCanvas.getContext("2d");
-          
-          // Draw image centered and scaled to fit 80% of canvas
-          const padding = 20;
-          const scale = Math.min((w - padding*2) / img.width, (h - padding*2) / img.height) * 0.9;
-          const iw = img.width * scale;
-          const ih = img.height * scale;
-          const ix = (w - iw) / 2;
-          const iy = (h - ih) / 2;
-          
-          mctx.drawImage(img, ix, iy, iw, ih);
-          renderCloud(maskCanvas);
-        } else {
-          renderCloud(null);
-        }
-      });
+    WordCloud(canvas, {
+      list,
+      gridSize:       Math.round(6 * w / 800),
+      weightFactor:   1,
+      fontFamily:     "'Montserrat', 'Inter', sans-serif",
+      fontWeight:     "700",
+      color:          (word, weight, fontSize, distance, theta) => {
+        const idx = Math.floor((theta / (2 * Math.PI)) * colors.length) % colors.length;
+        return colors[Math.abs(idx)];
+      },
+      rotateRatio:    0,          // horizontal only — professional look
+      backgroundColor:"transparent",
+      clearCanvas:    maskCanvas ? false : true,  // keep mask when present
+      drawOutOfBound: false,
+      shrinkToFit:    true,
     });
-  }, [words, theme]);
+
+    cleanupRef.current = true;
+  }, [words, theme, forwardedRef]);
+
+  useEffect(() => {
+    drawCloud();
+  }, [drawCloud]);
 
   return (
     <div
       ref={containerRef}
       className="wordcloud-wrapper"
-      style={{ position: "relative" }}
+      style={{ position: "relative", minHeight: 320 }}
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
     </div>

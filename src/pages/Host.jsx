@@ -1,78 +1,71 @@
+// src/pages/Host.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { db } from "../firebase";
 import { ref, set, update } from "firebase/database";
 import { generateGameId, countBlanks, computeWordFrequencies } from "../utils/wordCount";
 import { useGame } from "../hooks/useGame";
-import FloatingOrbs from "../components/FloatingOrbs";
+import BgGrid from "../components/BgGrid";
 import QRDisplay from "../components/QRDisplay";
 import WordCloudViz from "../components/WordCloudViz";
-import { Plus, StopCircle, Eye, Users, ChevronLeft } from "lucide-react";
+import { EVENTS, isLoggedIn, getStoredTheme, storeTheme, applyTheme } from "../utils/theme";
+import { Plus, StopCircle, Eye, Users, ChevronLeft, LayoutDashboard, Zap } from "lucide-react";
 
 // ── Sentence editor ──────────────────────────────────────────
 function SentenceEditor({ sentence, setSentence, textareaRef }) {
   function insertBlank() {
     const el = textareaRef.current;
-    if (!el) {
-      setSentence((s) => s + "__");
-      return;
-    }
+    if (!el) { setSentence((s) => s + "__"); return; }
     const start = el.selectionStart;
     const end = el.selectionEnd;
-    const next = sentence.slice(0, start) + "__" + sentence.slice(end);
-    setSentence(next);
+    setSentence(sentence.slice(0, start) + "__" + sentence.slice(end));
     requestAnimationFrame(() => {
       el.selectionStart = el.selectionEnd = start + 2;
       el.focus();
     });
   }
-
-  // Render preview with highlighted blanks
   const parts = sentence.split("__");
+  const blankCount = countBlanks(sentence);
 
   return (
-    <div>
-      <label style={{ display: "block", fontWeight: 700, marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-        Your sentence
-      </label>
-      <textarea
-        ref={textareaRef}
-        className="input"
-        rows={3}
-        placeholder='Type your sentence, click "Insert Blank" where you want a gap…'
-        value={sentence}
-        onChange={(e) => setSentence(e.target.value)}
-        style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem" }}
-      />
-      <div className="flex gap-1" style={{ marginTop: "0.6rem" }}>
-        <button className="btn btn-outline-blue btn-sm" onClick={insertBlank} type="button">
-          <Plus size={14} /> Insert Blank ( __ )
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div>
+        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
+          Sentence
+        </label>
+        <textarea
+          ref={textareaRef}
+          className="input"
+          rows={3}
+          placeholder='Write your sentence, then place cursor and click "Insert Blank" to add gaps…'
+          value={sentence}
+          onChange={(e) => setSentence(e.target.value)}
+          style={{ fontFamily: "var(--font-body)", fontSize: "0.9rem", lineHeight: 1.7 }}
+        />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <button className="btn btn-outline btn-sm" onClick={insertBlank} type="button">
+          <Plus size={13} /> Insert Blank
         </button>
-        <span style={{ fontSize: "0.8rem", color: "var(--muted)", alignSelf: "center", marginLeft: "auto" }}>
-          {countBlanks(sentence)} blank{countBlanks(sentence) !== 1 ? "s" : ""} detected
+        <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+          {blankCount} blank{blankCount !== 1 ? "s" : ""} detected
         </span>
       </div>
 
-      {/* Preview */}
       {sentence && (
-        <div className="card card-sm" style={{ marginTop: "1rem", background: "rgba(232,33,60,0.04)" }}>
-          <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
-            Preview
-          </p>
-          <p className="sentence-display" style={{ fontSize: "1.1rem" }}>
+        <div style={{ background: "var(--bg-tertiary)", borderRadius: "var(--radius-md)", padding: "1rem 1.25rem", border: "1px solid var(--border)" }}>
+          <p className="label-caps" style={{ marginBottom: "0.5rem" }}>Preview</p>
+          <p className="sentence-display" style={{ fontSize: "1rem", textAlign: "left" }}>
             {parts.map((part, i) => (
               <span key={i}>
                 {part}
                 {i < parts.length - 1 && (
                   <span style={{
-                    display: "inline-block",
-                    minWidth: 80,
-                    borderBottom: "3px solid var(--primary-main, #E8213C)",
-                    marginInline: "4px",
-                    color: "var(--primary-main, #E8213C)",
-                    fontFamily: "var(--font-display)",
+                    display: "inline-block", minWidth: 80,
+                    borderBottom: "2px solid var(--accent)",
+                    marginInline: "4px", color: "var(--accent-text)",
                   }}>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                   </span>
                 )}
               </span>
@@ -87,43 +80,27 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
 // ── Participant list ─────────────────────────────────────────
 function ParticipantList({ responses, game }) {
   const seen = new Set();
-  const uniqueResponses = responses.filter((r) => {
-    if (seen.has(r.name)) return false;
-    seen.add(r.name); return true;
-  });
-
+  const uniqueResponses = responses.filter((r) => { if (seen.has(r.name)) return false; seen.add(r.name); return true; });
   const joinedNames = new Set(Object.values(game?.participants || {}));
-  // Ensure those who answered are in the joined set (in case of legacy/direct answers)
   uniqueResponses.forEach((r) => joinedNames.add(r.name));
-
-  const joinedCount = joinedNames.size;
-  const answeredCount = uniqueResponses.length;
 
   return (
     <div>
-      <div className="flex items-center gap-1" style={{ marginBottom: "0.75rem" }}>
-        <span className="live-dot" />
-        <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>
-          Joined: {joinedCount} | Answered: {answeredCount}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+        <p className="label-caps">Participants</p>
+        <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+          <span className="live-dot" style={{ width: 6, height: 6, marginRight: 4 }} />
+          {joinedNames.size} joined · {uniqueResponses.length} answered
         </span>
       </div>
-      <div className="flex gap-1" style={{ flexWrap: "wrap" }}>
-        {Array.from(joinedNames).map((name, i) => {
-          const hasAnswered = seen.has(name);
-          return (
-            <div className="participant-chip" key={i} style={{ opacity: hasAnswered ? 1 : 0.5 }}>
-              <div className="participant-avatar">
-                {name?.charAt(0)?.toUpperCase()}
-              </div>
-              {name}
-            </div>
-          );
-        })}
-        {joinedCount === 0 && (
-          <p className="text-muted" style={{ fontSize: "0.85rem" }}>
-            Waiting for participants to join…
-          </p>
-        )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+        {Array.from(joinedNames).map((name, i) => (
+          <div className="participant-chip" key={i} style={{ opacity: seen.has(name) ? 1 : 0.5 }}>
+            <div className="participant-avatar">{name?.charAt(0)?.toUpperCase()}</div>
+            {name}
+          </div>
+        ))}
+        {joinedNames.size === 0 && <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>Waiting for participants to join…</p>}
       </div>
     </div>
   );
@@ -133,33 +110,31 @@ function ParticipantList({ responses, game }) {
 export default function Host() {
   const navigate = useNavigate();
   const location = useLocation();
-  const eventId = location.state?.eventId;
+
+  // Get eventId from route state or sessionStorage fallback
+  const eventId = location.state?.eventId || getStoredTheme();
+  const event = EVENTS[eventId] || null;
 
   useEffect(() => {
-    if (!eventId) {
-      navigate("/host-login");
-    } else {
-      document.body.className = `theme-${eventId}`;
-    }
+    if (!isLoggedIn()) { navigate("/host-login", { replace: true }); return; }
+    if (!eventId) { navigate("/select-event", { replace: true }); return; }
+    storeTheme(eventId);
+    applyTheme(eventId);
   }, [eventId, navigate]);
 
-  const [step, setStep] = useState(1); // 1=compose, 2=live
+  const [step, setStep] = useState(1);
   const [sentence, setSentence] = useState("");
   const [gameId, setGameId] = useState(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const textareaRef = useRef(null);
-
   const { game, responses } = useGame(gameId);
-
   const joinUrl = `${window.location.origin}/join/${gameId}`;
 
   async function handleCreate() {
     if (!sentence.trim()) { setError("Please enter a sentence first."); return; }
     if (countBlanks(sentence) === 0) { setError("Add at least one blank ( __ ) to your sentence."); return; }
-    setError("");
-    setCreating(true);
-
+    setError(""); setCreating(true);
     const id = generateGameId();
     try {
       await set(ref(db, `games/${id}`), {
@@ -168,7 +143,6 @@ export default function Host() {
         createdAt: Date.now(),
         eventId: eventId || "default",
       });
-      // Mark as globally active game
       await set(ref(db, "activeGame"), id);
       setGameId(id);
       setStep(2);
@@ -187,189 +161,199 @@ export default function Host() {
   }
 
   return (
-    <>
-      <FloatingOrbs />
-      <div className="page page-top">
-        <div className="container-wide" style={{ paddingBottom: "3rem" }}>
+    <div className="admin-layout">
+      <BgGrid />
 
-          {/* Header */}
-          <div className="flex items-center gap-2" style={{ marginBottom: "2rem" }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate("/")}>
-              <ChevronLeft size={16} /> Back
-            </button>
-            <div style={{ flex: 1 }} />
-            <img
-              src="/EdgeCloud Image.png"
-              alt="EdgeCloud"
-              style={{ height: 38, width: "auto", objectFit: "contain" }}
-            />
+      {/* ── Sidebar ────────────────────────────────────────── */}
+      <aside className="admin-sidebar">
+        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid var(--border)" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+        </div>
+
+        <div style={{ padding: "0.75rem", flex: 1 }}>
+          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Navigation</p>
+          <button className="nav-item active">
+            <LayoutDashboard size={15} /> Game Session
+          </button>
+
+          <div style={{ marginTop: "1.5rem" }}>
+            <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Event</p>
+            {event && (
+              <div style={{ padding: "0.75rem 1rem", background: "var(--accent-glow)", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)" }}>
+                <img src={event.logo} alt={event.shortName} style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "0.5rem" }} />
+                <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent-text)" }}>{event.shortName}</p>
+              </div>
+            )}
           </div>
 
-          {/* Step 1: Compose */}
-          {step === 1 && (
-            <div className="fade-in" style={{ maxWidth: 680, margin: "0 auto" }}>
-              <div className="card">
-                {/* Step indicator */}
-                <div className="step-indicator">
-                  <div className="step-dot active">1</div>
-                  <div className="step-line" />
-                  <div className="step-dot">2</div>
-                  <div className="step-line" />
-                  <div className="step-dot">3</div>
+          {step === 2 && gameId && (
+            <div style={{ marginTop: "1.5rem" }}>
+              <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Session</p>
+              <div style={{ padding: "0.75rem 1rem", background: "var(--bg-tertiary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
+                  <span className="live-dot" />
+                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#3FB950" }}>LIVE</span>
                 </div>
-
-                <h2 className="section-title" style={{ marginBottom: "0.4rem" }}>
-                  Craft Your Sentence
-                </h2>
-                <p className="text-muted" style={{ marginBottom: "1.5rem" }}>
-                  Write a fill-in-the-blank sentence. Place your cursor and click{" "}
-                  <strong>Insert Blank</strong> to add a gap.
+                <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "monospace" }}>Game #{gameId}</p>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+                  {responses.length} response{responses.length !== 1 ? "s" : ""}
                 </p>
+              </div>
+            </div>
+          )}
+        </div>
 
-                <SentenceEditor
-                  sentence={sentence}
-                  setSentence={setSentence}
-                  textareaRef={textareaRef}
-                />
+        <div style={{ padding: "1rem", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <button className="nav-item" onClick={() => navigate("/select-event")}>
+            <ChevronLeft size={15} /> Change Event
+          </button>
+        </div>
+      </aside>
 
-                {error && (
-                  <p style={{ color: "#EF4444", fontSize: "0.85rem", marginTop: "0.75rem" }}>{error}</p>
-                )}
+      {/* ── Main ───────────────────────────────────────────── */}
+      <div className="admin-main">
+        {/* Topbar */}
+        <div className="admin-topbar">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Zap size={15} color="var(--accent-text)" />
+            <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>
+              {step === 1 ? "Compose Sentence" : "Live Session"}
+            </span>
+          </div>
+          <div style={{ flex: 1 }} />
+          {event && (
+            <span className="badge badge-accent">{event.shortName}</span>
+          )}
+          {step === 2 && (
+            <span className="badge badge-green">
+              <span className="live-dot" style={{ width: 5, height: 5 }} /> LIVE
+            </span>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ width: 28, height: 28, borderRadius: "var(--radius-sm)", background: "var(--accent-glow)", border: "1px solid var(--accent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--accent-text)" }}>H</span>
+            </div>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500 }}>Host</span>
+          </div>
+        </div>
 
-                <div style={{ marginTop: "1.75rem" }}>
-                  <button
-                    className="btn btn-primary btn-lg"
-                    style={{ width: "100%" }}
-                    onClick={handleCreate}
-                    disabled={creating}
-                  >
-                    {creating ? "Creating…" : (
-                      <><Eye size={20} /> Launch Game &amp; Show QR</>
-                    )}
+        {/* Content */}
+        <div className="admin-content">
+          {/* ── Step 1: Compose ── */}
+          {step === 1 && (
+            <div className="fade-in" style={{ maxWidth: 720, margin: "0 auto" }}>
+              {/* Step indicator */}
+              <div className="step-indicator" style={{ marginBottom: "1.5rem" }}>
+                <div className="step-dot active">1</div>
+                <div className="step-line" />
+                <div className="step-dot">2</div>
+                <div className="step-line" />
+                <div className="step-dot">3</div>
+                <span style={{ marginLeft: "0.5rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>Compose → Launch → Results</span>
+              </div>
+
+              <div className="card" style={{ marginBottom: "1rem" }}>
+                <h2 className="section-title" style={{ marginBottom: "0.35rem" }}>Craft Your Sentence</h2>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+                  Write a fill-in-the-blank sentence. Audience members will submit words to complete it — generating your live word cloud.
+                </p>
+                <SentenceEditor sentence={sentence} setSentence={setSentence} textareaRef={textareaRef} />
+                {error && <p style={{ color: "#F85149", fontSize: "0.82rem", marginTop: "0.75rem" }}>{error}</p>}
+                <div style={{ marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
+                  <button className="btn btn-primary btn-lg" onClick={handleCreate} disabled={creating}>
+                    {creating ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <><Eye size={16} /> Launch Game & Show QR</>}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 2: Live */}
+          {/* ── Step 2: Live ── */}
           {step === 2 && gameId && (
-            <div className="fade-in">
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 340px",
-                  gap: "1.5rem",
-                  alignItems: "stretch",
-                }}
-              >
-                {/* Left: live status */}
-                <div className="flex flex-col gap-3" style={{ height: "100%" }}>
-
-                  {/* Status card */}
-                  <div className="card">
-                    <div className="step-indicator">
-                      <div className="step-dot done">✓</div>
-                      <div className="step-line" />
-                      <div className="step-dot active">2</div>
-                      <div className="step-line" />
-                      <div className="step-dot">3</div>
-                    </div>
-                    <div className="flex items-center gap-2" style={{ marginBottom: "1rem" }}>
-                      <span className="badge badge-green">
-                        <span className="live-dot" style={{ width: 6, height: 6 }} />
-                        LIVE
-                      </span>
-                      <span style={{ fontWeight: 700, color: "var(--muted)", fontFamily: "var(--font-display)", letterSpacing: "0.1em" }}>
-                        #{gameId}
-                      </span>
-                    </div>
-                    <h2 className="section-title" style={{ marginBottom: "0.5rem" }}>
-                      Game is Live!
-                    </h2>
-                    <p className="text-muted">
-                      Participants are responding. Watch the word cloud update in real-time, and stop the game when ready.
-                    </p>
+            <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem", alignItems: "start" }}>
+              {/* Left */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                {/* Status */}
+                <div className="card">
+                  <div className="step-indicator">
+                    <div className="step-dot done">✓</div>
+                    <div className="step-line" />
+                    <div className="step-dot active">2</div>
+                    <div className="step-line" />
+                    <div className="step-dot">3</div>
                   </div>
-
-                  {/* Real-time Word Cloud */}
-                  <div className="card scale-in flex-1 flex flex-col" style={{ minHeight: "450px" }}>
-                    <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
-                      Real-time Word Cloud
-                    </p>
-                    <div style={{ flex: 1, background: "linear-gradient(135deg, var(--bg) 0%, #FFF 50%, var(--bg) 100%)", borderRadius: "var(--radius-md)", minHeight: "350px" }}>
-                      {responses.length > 0 ? (
-                        <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} />
-                      ) : (
-                        <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}>
-                          Waiting for words...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* End game */}
-                  <button
-                    className="btn btn-coral btn-lg"
-                    style={{ width: "100%", marginTop: "auto" }}
-                    onClick={handleEnd}
-                  >
-                    <StopCircle size={22} /> Stop Game &amp; Reveal Results
-                  </button>
+                  <h2 className="section-title" style={{ marginBottom: "0.35rem" }}>Game is Live</h2>
+                  <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.6 }}>
+                    Participants are filling in the sentence. The word cloud updates in real-time. Stop the game to reveal final results.
+                  </p>
                 </div>
 
-                {/* Right: Info & Controls */}
-                <div className="flex flex-col gap-3">
-                  {/* QR Code */}
-                  <div className="card">
-                    <div className="step-indicator" style={{ marginBottom: "1rem" }}>
-                      <Users size={16} style={{ color: "var(--muted)" }} />
-                      <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
-                        Share with attendees
+                {/* Sentence preview */}
+                <div className="card">
+                  <p className="label-caps" style={{ marginBottom: "0.5rem" }}>Active Sentence</p>
+                  <p className="sentence-display" style={{ fontSize: "1rem", textAlign: "left" }}>
+                    {sentence.split("__").map((part, i, arr) => (
+                      <span key={i}>
+                        {part}
+                        {i < arr.length - 1 && (
+                          <span style={{ display: "inline-block", minWidth: 80, borderBottom: "2px solid var(--accent)", marginInline: "4px", color: "var(--accent-text)" }}>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          </span>
+                        )}
                       </span>
+                    ))}
+                  </p>
+                </div>
+
+                {/* Word Cloud */}
+                <div className="card" style={{ minHeight: 400 }}>
+                  <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Live Word Cloud</p>
+                  <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", minHeight: 320, overflow: "hidden" }}>
+                    {responses.length > 0 ? (
+                      <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} />
+                    ) : (
+                      <div style={{ display: "flex", height: 320, alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "0.75rem", color: "var(--text-muted)" }}>
+                        <div className="spinner" />
+                        <span style={{ fontSize: "0.85rem" }}>Waiting for first responses…</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* End game */}
+                <button className="btn btn-danger btn-lg" style={{ width: "100%" }} onClick={handleEnd}>
+                  <StopCircle size={18} /> Stop Game & Reveal Results
+                </button>
+              </div>
+
+              {/* Right */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", position: "sticky", top: "2rem" }}>
+                {/* QR */}
+                <div className="card">
+                  <p className="label-caps" style={{ marginBottom: "0.75rem" }}>
+                    <Users size={11} style={{ display: "inline", marginRight: 4 }} />
+                    Share with Audience
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div className="qr-container">
+                      <QRDisplay url={joinUrl} gameId={gameId} />
                     </div>
-                    <QRDisplay url={joinUrl} gameId={gameId} />
-                    <div className="divider" />
-                    <p style={{ fontSize: "0.78rem", color: "var(--muted)", textAlign: "center", wordBreak: "break-all" }}>
-                      {joinUrl}
-                    </p>
                   </div>
+                  <div className="divider" />
+                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center", wordBreak: "break-all", fontFamily: "monospace" }}>
+                    {joinUrl}
+                  </p>
+                </div>
 
-                  {/* Sentence preview */}
-                  <div className="card">
-                    <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
-                      Active Sentence
-                    </p>
-                    <p className="sentence-display" style={{ fontSize: "1.1rem" }}>
-                      {sentence.split("__").map((part, i, arr) => (
-                        <span key={i}>
-                          {part}
-                          {i < arr.length - 1 && (
-                            <span style={{
-                              display: "inline-block",
-                              minWidth: 80,
-                              borderBottom: "3px solid #E8213C",
-                              marginInline: "4px",
-                              color: "#E8213C",
-                            }}>
-                              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            </span>
-                          )}
-                        </span>
-                      ))}
-                    </p>
-                  </div>
-
-                  {/* Participants */}
-                  <div className="card" style={{ flex: 1 }}>
-                    <ParticipantList responses={responses} game={game} />
-                  </div>
+                {/* Participants */}
+                <div className="card">
+                  <ParticipantList responses={responses} game={game} />
                 </div>
               </div>
             </div>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

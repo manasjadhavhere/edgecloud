@@ -36,23 +36,24 @@ const CROWN_SVG = `
 // Cloud SVG — a wide, fluffy multi-lobe cloud shape
 const CLOUD_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -50 1000 600" width="1000" height="600" preserveAspectRatio="none">
-  <!-- Base block (creates flat-ish bottom) -->
-  <rect x="90" y="260" width="640" height="160" rx="80" fill="#000" />
+  <!-- Core filler to prevent empty holes in the middle -->
+  <rect x="160" y="240" width="480" height="110" rx="20" fill="#000" />
   
-  <!-- Left-most puff -->
-  <circle cx="150" cy="270" r="90" fill="#000" />
+  <!-- Main top lobes (distinct and separated to create deep classic crevices) -->
+  <circle cx="400" cy="170" r="135" fill="#000" />  <!-- Center Top -->
+  <circle cx="240" cy="220" r="95" fill="#000" />   <!-- Mid-Left -->
+  <circle cx="560" cy="220" r="95" fill="#000" />   <!-- Mid-Right -->
   
-  <!-- Mid-Left puff -->
-  <circle cx="270" cy="190" r="130" fill="#000" />
+  <!-- Side lobes -->
+  <circle cx="140" cy="290" r="75" fill="#000" />   <!-- Far-Left -->
+  <circle cx="660" cy="290" r="75" fill="#000" />   <!-- Far-Right -->
   
-  <!-- Center tall puff -->
-  <circle cx="430" cy="140" r="170" fill="#000" />
-  
-  <!-- Mid-Right puff -->
-  <circle cx="590" cy="195" r="125" fill="#000" />
-  
-  <!-- Right-most puff -->
-  <circle cx="710" cy="265" r="95" fill="#000" />
+  <!-- Bottom fluffy lobes (almost flat but slightly bubbly) -->
+  <circle cx="210" cy="330" r="55" fill="#000" />
+  <circle cx="300" cy="340" r="55" fill="#000" />
+  <circle cx="400" cy="345" r="55" fill="#000" />
+  <circle cx="500" cy="340" r="55" fill="#000" />
+  <circle cx="590" cy="330" r="55" fill="#000" />
 </svg>
 `;
 

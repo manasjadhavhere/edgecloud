@@ -296,10 +296,10 @@ export default function Host() {
         </div>
 
         {/* Content */}
-        <div className="admin-content">
+        <div className="admin-content" key={step}>
           {/* ── Step 1: Compose ── */}
           {step === 1 && (
-            <div className="fade-in" style={{ maxWidth: 720, margin: "0 auto" }}>
+            <div className="animate-slide-right" style={{ maxWidth: 720, margin: "0 auto" }}>
               {/* Step indicator */}
               <div className="step-indicator" style={{ marginBottom: "1.5rem" }}>
                 <div className="step-dot active">1</div>
@@ -328,7 +328,7 @@ export default function Host() {
 
           {/* ── Step 2: Live ── */}
           {step === 2 && gameId && (
-            <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem", alignItems: "start" }}>
+            <div className="animate-slide-right" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem", alignItems: "start" }}>
               {/* Left */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 {/* Status */}

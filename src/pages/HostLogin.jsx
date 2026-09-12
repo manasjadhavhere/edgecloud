@@ -73,21 +73,6 @@ export default function HostLogin() {
           animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        .animate-slide-left {
-          animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .animate-slide-right {
-          animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
       `}</style>
 
       {/* ══════════════════════════════════════════

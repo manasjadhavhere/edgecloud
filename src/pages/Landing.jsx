@@ -184,7 +184,7 @@ export default function Landing() {
           LAYER 4: MAIN CONTENT (Left col + Right col)
       ══════════════════════════════════════════ */}
       <div
-        className="lp-outer"
+        className="lp-outer animate-slide-right"
         style={{
           position: "relative", zIndex: 10,
           display: "flex", minHeight: "100vh",

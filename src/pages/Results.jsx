@@ -115,7 +115,7 @@ export default function Results() {
         </div>
 
         {/* Content */}
-        <div className="admin-content">
+        <div className="admin-content animate-slide-right" key={viewIndex}>
           {/* Sentence */}
           {game?.sentence && (
             <div className="card" style={{ marginBottom: "1.5rem" }}>

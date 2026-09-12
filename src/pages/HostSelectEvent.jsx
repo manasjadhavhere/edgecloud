@@ -102,7 +102,7 @@ export default function HostSelectEvent() {
           <Layers size={16} color="var(--text-muted)" />
           <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>Select Event</span>
         </div>
-        <div className="admin-content">
+        <div className="admin-content animate-slide-right">
           <div style={{ marginBottom: "2rem" }}>
             <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.4rem" }}>Choose an Event</h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>

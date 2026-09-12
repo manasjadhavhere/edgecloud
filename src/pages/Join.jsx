@@ -18,7 +18,7 @@ function NameEntry({ onSubmit, eventId }) {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
       <BottomRightWaves />
-      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="fade-in">
+      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="animate-slide-right">
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           {event ? (
             <img src={event.logo} alt={event.name} style={{ height: 48, width: "auto", objectFit: "contain", marginBottom: "1rem" }} />
@@ -103,7 +103,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
       </div>
 
       <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.5rem" }}>
-        <div style={{ width: "100%", maxWidth: 600, display: "flex", flexDirection: "column", gap: "1.25rem" }} className="fade-in">
+        <div style={{ width: "100%", maxWidth: 600, display: "flex", flexDirection: "column", gap: "1.25rem" }} className="animate-slide-right">
 
           {/* Sentence card */}
           <div className="card">
@@ -177,7 +177,7 @@ function ThankYouScreen({ eventId }) {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
       <BottomRightWaves />
-      <div className="card fade-in" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2.5rem 2rem" }}>
+      <div className="card animate-slide-right" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2.5rem 2rem" }}>
         <CheckCircle size={48} style={{ color: "#16A34A", margin: "0 auto 1.25rem" }} />
         {event && <img src={event.logo} alt={event.name} style={{ height: 40, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}
         <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.5rem", color: "var(--text)" }}>Thank You!</h2>
@@ -215,7 +215,7 @@ export default function Join() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
       <BottomRightWaves />
-      <div className="card" style={{ position: "relative", zIndex: 1, maxWidth: 360, width: "100%", textAlign: "center" }}>
+      <div className="card animate-slide-right" style={{ position: "relative", zIndex: 1, maxWidth: 360, width: "100%", textAlign: "center" }}>
         <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.4rem" }}>Session Not Found</h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>
           Double-check your Game ID or scan the QR code again.

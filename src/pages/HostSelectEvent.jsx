@@ -82,7 +82,6 @@ export default function HostSelectEvent() {
             </button>
           ))}
         </div>
-        </div>
         <div style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span className="badge badge-green" style={{ background: "rgba(63,185,80,0.15)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.2)", width: "100%", justifyContent: "center" }}>

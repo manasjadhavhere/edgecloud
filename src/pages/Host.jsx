@@ -8,9 +8,8 @@ import { useGame } from "../hooks/useGame";
 import BgGrid from "../components/BgGrid";
 import QRDisplay from "../components/QRDisplay";
 import WordCloudViz from "../components/WordCloudViz";
-import { LayoutDashboard, Users, ChevronLeft, StopCircle, Zap, LogOut } from "lucide-react";
 import { EVENTS, isLoggedIn, getStoredTheme, storeTheme, applyTheme, setLoggedOut } from "../utils/theme";
-import { Plus, StopCircle, Eye, Users, ChevronLeft, LayoutDashboard, Zap } from "lucide-react";
+import { Plus, StopCircle, Eye, Users, ChevronLeft, LayoutDashboard, Zap, LogOut } from "lucide-react";
 
 // ── Sentence editor ──────────────────────────────────────────
 function SentenceEditor({ sentence, setSentence, textareaRef }) {

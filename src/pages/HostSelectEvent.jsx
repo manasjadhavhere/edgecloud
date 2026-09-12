@@ -3,10 +3,15 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BgGrid from "../components/BgGrid";
 import { EVENTS, storeTheme, getStoredTheme, isLoggedIn, applyTheme } from "../utils/theme";
-import { Share2, Layers } from "lucide-react";
+import { Share2, Layers, StopCircle, Zap } from "lucide-react";
+import { useActiveGame, useGame } from "../hooks/useGame";
+import { db } from "../firebase";
+import { ref, update, set } from "firebase/database";
 
 export default function HostSelectEvent() {
   const navigate = useNavigate();
+  const { activeGameId } = useActiveGame();
+  const { game: activeGame } = useGame(activeGameId);
 
   useEffect(() => {
     if (!isLoggedIn()) { navigate("/host-login", { replace: true }); return; }
@@ -19,6 +24,18 @@ export default function HostSelectEvent() {
     navigate("/host", { state: { eventId } });
   }
 
+  async function cancelActiveGame() {
+    if (!activeGameId) return;
+    await update(ref(db, `games/${activeGameId}`), { status: "ended" });
+    await set(ref(db, "activeGame"), null);
+  }
+
+  function enterActiveGame() {
+    if (!activeGameId || !activeGame) return;
+    storeTheme(activeGame.eventId);
+    navigate("/host", { state: { eventId: activeGame.eventId, step: 2, gameId: activeGameId } });
+  }
+
   return (
     <div className="admin-layout">
       <BgGrid />
@@ -28,7 +45,35 @@ export default function HostSelectEvent() {
         <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         </div>
+        
         <div style={{ padding: "0.75rem", flex: 1 }}>
+          {/* Active Sessions Ribbon */}
+          {activeGameId && (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Active Sessions</p>
+              <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", padding: "0.75rem 0.75rem 0.5rem", position: "relative", overflow: "hidden" }}>
+                {/* Green Ribbon */}
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "#3FB950" }} />
+                
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <span className="live-dot" style={{ width: 6, height: 6 }} />
+                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#3FB950" }}>LIVE GAME</span>
+                </div>
+                
+                <p style={{ fontSize: "0.8rem", color: "#E2E8F0", marginBottom: "0.75rem", fontFamily: "monospace" }}>#{activeGameId}</p>
+                
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button className="btn btn-primary" style={{ flex: 1, padding: "0.4rem", fontSize: "0.7rem", borderRadius: "2px" }} onClick={enterActiveGame}>
+                    <Zap size={12} style={{ marginRight: 4 }} /> Enter
+                  </button>
+                  <button className="btn btn-outline" style={{ flex: 1, padding: "0.4rem", fontSize: "0.7rem", color: "#F85149", borderColor: "#F85149", borderRadius: "2px" }} onClick={cancelActiveGame}>
+                    <StopCircle size={12} style={{ marginRight: 4 }} /> Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Events</p>
           {Object.values(EVENTS).map((evt) => (
             <button key={evt.id} className="nav-item dark-nav" onClick={() => selectEvent(evt.id)}>

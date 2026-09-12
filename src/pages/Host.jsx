@@ -122,9 +122,9 @@ export default function Host() {
     applyTheme(eventId);
   }, [eventId, navigate]);
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(location.state?.step || 1);
   const [sentence, setSentence] = useState("");
-  const [gameId, setGameId] = useState(null);
+  const [gameId, setGameId] = useState(location.state?.gameId || null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const textareaRef = useRef(null);
@@ -292,7 +292,7 @@ export default function Host() {
                 <div className="card">
                   <p className="label-caps" style={{ marginBottom: "0.5rem" }}>Active Sentence</p>
                   <p className="sentence-display" style={{ fontSize: "1rem", textAlign: "left" }}>
-                    {sentence.split("__").map((part, i, arr) => (
+                    {(game?.sentence || sentence).split("__").map((part, i, arr) => (
                       <span key={i}>
                         {part}
                         {i < arr.length - 1 && (

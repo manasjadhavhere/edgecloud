@@ -7,8 +7,8 @@ import { LogIn, Users, ArrowRight } from "lucide-react";
 export default function Landing() {
   const navigate = useNavigate();
   const { activeGameId } = useActiveGame();
-  const [joinId, setJoinId]   = useState("");
-  const [error, setError]     = useState("");
+  const [joinId, setJoinId] = useState("");
+  const [error, setError] = useState("");
 
   function handleJoin() {
     const id = joinId.trim().toUpperCase() || activeGameId;
@@ -28,12 +28,12 @@ export default function Landing() {
           position: "absolute",
           top: 0, left: 0, width: "100%", height: "100%",
           objectFit: "cover",
-          opacity: 0.45,
+          opacity: 0.25,
           zIndex: 0,
           pointerEvents: "none"
         }}
       />
-      
+
       {/* Top right Host Login */}
       <div style={{ position: "absolute", top: "1.5rem", right: "2rem", zIndex: 10 }}>
         <button className="btn btn-ghost btn-sm" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(4px)" }} onClick={() => navigate("/host-login")}>
@@ -42,17 +42,17 @@ export default function Landing() {
       </div>
 
       <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
-        
+
         {/* Hero */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem" }}>
           <div style={{ textAlign: "center", maxWidth: 640 }} className="fade-in">
-            
+
             {/* Logo */}
             <div style={{ marginBottom: "2.5rem" }}>
-              <img 
-                src="/EdgeCloud Image.png" 
-                alt="EdgeCloud" 
-                style={{ height: 60, width: "auto", objectFit: "contain", margin: "0 auto" }} 
+              <img
+                src="/EdgeCloud Image.png"
+                alt="EdgeCloud"
+                style={{ height: 60, width: "auto", objectFit: "contain", margin: "0 auto" }}
               />
             </div>
 

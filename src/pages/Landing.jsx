@@ -263,13 +263,14 @@ export default function Landing() {
                 backgroundClip: "text",
                 position: "relative",
                 display: "inline-block",
-                paddingRight: "4px"
+                paddingRight: "4px",
+                paddingBottom: "0.2em"
               }}>
                 Story
                 {/* Spark lines bursting outward from right of "Story" */}
                 <svg
                   style={{
-                    position: "absolute", top: "-6px", right: "-32px",
+                    position: "absolute", top: "4px", right: "-36px",
                     width: "48px", height: "48px",
                     overflow: "visible", pointerEvents: "none"
                   }}
@@ -420,7 +421,7 @@ export default function Landing() {
               maxWidth: "530px",
               objectFit: "contain",
               filter: "drop-shadow(0 10px 40px rgba(0,0,0,0.2))",
-              transform: "translateY(-60px)"
+              transform: "translateY(-140px)"
             }}
           />
         </div>

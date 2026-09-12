@@ -19,9 +19,10 @@ export default function QRDisplay({ url, gameId }) {
           Scan to join
         </p>
         <div style={{
-          display: "inline-flex", alignItems: "center", gap: "0.4rem",
+          display: "flex", justifyContent: "center", alignItems: "center", gap: "0.4rem",
           background: "var(--accent-glow)", border: "1px solid var(--accent)",
-          borderRadius: "var(--radius-sm)", padding: "0.25rem 0.75rem",
+          borderRadius: "var(--radius-sm)", padding: "0.5rem 0.75rem",
+          marginTop: "0.5rem", lineHeight: "1"
         }}>
           <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Game ID:</span>
           <span style={{ fontFamily: "monospace", fontSize: "1rem", color: "var(--accent-text)", fontWeight: 700, letterSpacing: "0.15em" }}>

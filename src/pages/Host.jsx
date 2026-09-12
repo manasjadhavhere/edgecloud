@@ -335,9 +335,7 @@ export default function Host() {
                     Share with Audience
                   </p>
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <div className="qr-container">
-                      <QRDisplay url={joinUrl} gameId={gameId} />
-                    </div>
+                    <QRDisplay url={joinUrl} gameId={gameId} />
                   </div>
                   <div className="divider" />
                   <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center", wordBreak: "break-all", fontFamily: "monospace" }}>

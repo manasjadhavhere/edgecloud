@@ -1,6 +1,6 @@
 // src/pages/Landing.jsx
 import { useNavigate } from "react-router-dom";
-import BgGrid from "../components/BgGrid";
+import B2BBackground from "../components/B2BBackground";
 import { useActiveGame } from "../hooks/useGame";
 import { useState } from "react";
 import { LogIn, Users, ArrowRight } from "lucide-react";
@@ -18,24 +18,31 @@ export default function Landing() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <BgGrid />
-      <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Topbar */}
-        <div style={{ height: 56, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", padding: "0 2rem", background: "var(--bg-secondary)" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 26, width: "auto", objectFit: "contain" }} />
-          <div style={{ flex: 1 }} />
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate("/host-login")}>
-            <LogIn size={14} /> Host Login
-          </button>
-        </div>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
+      <B2BBackground />
+      
+      {/* Top right Host Login */}
+      <div style={{ position: "absolute", top: "1.5rem", right: "2rem", zIndex: 10 }}>
+        <button className="btn btn-ghost btn-sm" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(4px)" }} onClick={() => navigate("/host-login")}>
+          <LogIn size={14} /> Host Login
+        </button>
+      </div>
 
+      <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
+        
         {/* Hero */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem" }}>
           <div style={{ textAlign: "center", maxWidth: 640 }} className="fade-in">
-            <span className="badge badge-accent" style={{ marginBottom: "1.25rem", display: "inline-flex" }}>
-              Live Word Cloud Platform
-            </span>
+            
+            {/* Logo */}
+            <div style={{ marginBottom: "2.5rem" }}>
+              <img 
+                src="/EdgeCloud Image.png" 
+                alt="EdgeCloud" 
+                style={{ height: 60, width: "auto", objectFit: "contain", margin: "0 auto" }} 
+              />
+            </div>
+
             <h1 style={{
               fontFamily: "var(--font-display)", fontSize: "clamp(2.2rem, 6vw, 3.8rem)",
               fontWeight: 800, marginBottom: "1rem", lineHeight: 1.1,
@@ -48,16 +55,16 @@ export default function Landing() {
               Real-time fill-in-the-blank word clouds for conferences, summits, and live events. Powered by ET Edge.
             </p>
 
-            {/* Join area */}
-            <div className="card" style={{ maxWidth: 420, margin: "0 auto", background: "var(--surface)" }}>
-              <p className="label-caps" style={{ marginBottom: "0.75rem" }}>
-                <Users size={11} style={{ display: "inline", marginRight: 4 }} />
+            {/* Join area (Square/Sharp container) */}
+            <div className="card" style={{ maxWidth: 420, margin: "0 auto", background: "var(--surface)", borderRadius: "2px", padding: "2rem", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+              <p className="label-caps" style={{ marginBottom: "1rem", color: "var(--text-secondary)" }}>
+                <Users size={12} style={{ display: "inline", marginRight: 6 }} />
                 Join a Session
               </p>
               {activeGameId && (
                 <button
                   className="btn btn-primary"
-                  style={{ width: "100%", marginBottom: "0.75rem" }}
+                  style={{ width: "100%", marginBottom: "1rem", borderRadius: "2px", padding: "0.85rem" }}
                   onClick={() => navigate(`/join/${activeGameId}`)}
                 >
                   Join Active Game <ArrowRight size={15} />
@@ -70,21 +77,21 @@ export default function Landing() {
                   value={joinId}
                   onChange={(e) => { setJoinId(e.target.value); setError(""); }}
                   onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                  style={{ textTransform: "uppercase", letterSpacing: "0.08em", flex: 1 }}
+                  style={{ textTransform: "uppercase", letterSpacing: "0.08em", flex: 1, borderRadius: "2px" }}
                 />
-                <button className="btn btn-primary" onClick={handleJoin}>
+                <button className="btn btn-primary" style={{ borderRadius: "2px", padding: "0 1.5rem" }} onClick={handleJoin}>
                   Join
                 </button>
               </div>
-              {error && <p style={{ color: "#F85149", fontSize: "0.8rem", marginTop: "0.5rem" }}>{error}</p>}
+              {error && <p style={{ color: "#F85149", fontSize: "0.8rem", marginTop: "0.75rem" }}>{error}</p>}
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ borderTop: "1px solid var(--border)", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Powered by ET Edge</span>
-          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>EdgeCloud v2.0</span>
+        <div style={{ borderTop: "1px solid var(--border)", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface)", position: "relative", zIndex: 10 }}>
+          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>Powered by ET Edge</span>
+          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>EdgeCloud v2.0</span>
         </div>
       </div>
     </div>

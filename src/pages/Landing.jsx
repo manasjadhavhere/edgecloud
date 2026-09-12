@@ -21,6 +21,51 @@ export default function Landing() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
       <B2BBackground />
 
+      {/* Side Images and Borders */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
+        <svg width="0" height="0" style={{ position: "absolute" }}>
+          <defs>
+            <clipPath id="leftClip" clipPathUnits="objectBoundingBox">
+              <path d="M 0 0 L 0.35 0 Q 0.25 0.5 0.05 1 L 0 1 Z" />
+            </clipPath>
+            <clipPath id="rightClip" clipPathUnits="objectBoundingBox">
+              <path d="M 0.8 0 L 1 0 L 1 1 L 0.65 1 Q 0.7 0.5 0.8 0 Z" />
+            </clipPath>
+          </defs>
+        </svg>
+        
+        <img 
+          src="/left_side_image.webp" 
+          alt=""
+          style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            objectFit: "cover", clipPath: "url(#leftClip)"
+          }} 
+        />
+        <img 
+          src="/right_image.jpg" 
+          alt=""
+          style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            objectFit: "cover", clipPath: "url(#rightClip)"
+          }} 
+        />
+        
+        <svg 
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          preserveAspectRatio="none" 
+          viewBox="0 0 100 100"
+        >
+          {/* Left Line */}
+          <path d="M 35 0 Q 25 50 5 100" fill="none" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
+          <path d="M 35 0 Q 25 50 5 100" fill="none" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          
+          {/* Right Line */}
+          <path d="M 80 0 Q 70 50 65 100" fill="none" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
+          <path d="M 80 0 Q 70 50 65 100" fill="none" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </div>
+
       {/* Top right Host Login */}
       <div style={{ position: "absolute", top: "1.5rem", right: "2rem", zIndex: 10 }}>
         <button className="btn btn-ghost btn-sm" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(4px)" }} onClick={() => navigate("/host-login")}>

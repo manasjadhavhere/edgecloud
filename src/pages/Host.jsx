@@ -79,10 +79,17 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
 
 // ── Participant list ─────────────────────────────────────────
 function ParticipantList({ responses, game }) {
+  const [showAll, setShowAll] = useState(false);
   const seen = new Set();
   const uniqueResponses = responses.filter((r) => { if (seen.has(r.name)) return false; seen.add(r.name); return true; });
-  const joinedNames = new Set(Object.values(game?.participants || {}));
-  uniqueResponses.forEach((r) => joinedNames.add(r.name));
+  
+  const joinedNamesSet = new Set(Object.values(game?.participants || {}));
+  uniqueResponses.forEach((r) => joinedNamesSet.add(r.name));
+  const joinedNames = Array.from(joinedNamesSet);
+  
+  // Latest 10 joined
+  const displayNames = joinedNames.slice(-10).reverse();
+  const hiddenCount = joinedNames.length - displayNames.length;
 
   return (
     <div>
@@ -90,18 +97,49 @@ function ParticipantList({ responses, game }) {
         <p className="label-caps">Participants</p>
         <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
           <span className="live-dot" style={{ width: 6, height: 6, marginRight: 4 }} />
-          {joinedNames.size} joined · {uniqueResponses.length} answered
+          {joinedNames.length} joined · {uniqueResponses.length} answered
         </span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-        {Array.from(joinedNames).map((name, i) => (
+        {displayNames.map((name, i) => (
           <div className="participant-chip" key={i} style={{ opacity: seen.has(name) ? 1 : 0.5 }}>
             <div className="participant-avatar">{name?.charAt(0)?.toUpperCase()}</div>
             {name}
           </div>
         ))}
-        {joinedNames.size === 0 && <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>Waiting for participants to join…</p>}
+        {hiddenCount > 0 && (
+          <button className="participant-chip" style={{ cursor: "pointer", background: "var(--bg-secondary)" }} onClick={() => setShowAll(true)}>
+            + {hiddenCount} more
+          </button>
+        )}
+        {joinedNames.length === 0 && <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>Waiting for participants to join…</p>}
       </div>
+
+      {showAll && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem"
+        }} onClick={() => setShowAll(false)}>
+          <div style={{
+            background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: "1.5rem",
+            width: "100%", maxWidth: "500px", maxHeight: "80vh", overflowY: "auto",
+            boxShadow: "var(--shadow-lg)"
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>All Participants ({joinedNames.length})</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowAll(false)}>Close</button>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              {joinedNames.reverse().map((name, i) => (
+                <div className="participant-chip" key={i} style={{ opacity: seen.has(name) ? 1 : 0.5 }}>
+                  <div className="participant-avatar">{name?.charAt(0)?.toUpperCase()}</div>
+                  {name}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -155,9 +193,24 @@ export default function Host() {
 
   async function handleEnd() {
     if (!gameId) return;
-    await update(ref(db, `games/${gameId}`), { status: "ended" });
+
+    // Capture the current state of the word cloud canvas as an image
+    let finalCloudImage = null;
+    const canvas = document.querySelector("canvas");
+    if (canvas) {
+      try {
+        finalCloudImage = canvas.toDataURL("image/png");
+      } catch (e) {
+        console.error("Failed to capture cloud image:", e);
+      }
+    }
+
+    const updates = { status: "ended", endedAt: Date.now() };
+    if (finalCloudImage) updates.finalCloudImage = finalCloudImage;
+
+    await update(ref(db, `games/${gameId}`), updates);
     await set(ref(db, "activeGame"), null);
-    navigate(`/results/${gameId}`);
+    navigate(`/results/${gameId}`, { state: { eventId } });
   }
 
   return (

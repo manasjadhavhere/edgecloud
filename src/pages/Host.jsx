@@ -40,34 +40,37 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
       
       {/* Editor Section */}
       <div style={{ position: "relative" }}>
+        <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+          Your Sentence
+        </label>
         <textarea
           ref={textareaRef}
           className="input"
           rows={3}
-          placeholder='Start typing your sentence here...'
+          placeholder='E.g. The most important innovation next year is __.'
           value={sentence}
           onChange={(e) => setSentence(e.target.value)}
           style={{ 
-            fontFamily: "var(--font-display)", 
-            fontSize: "1.1rem", 
-            lineHeight: 1.6,
-            padding: "1.25rem",
-            paddingBottom: "4rem", 
-            borderRadius: "var(--radius-lg)",
-            border: "2px solid var(--border)",
-            background: "var(--surface)",
-            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.02)",
+            fontFamily: "var(--font-body)", 
+            fontSize: "1.05rem", 
+            lineHeight: 1.7,
+            padding: "1rem",
+            paddingBottom: "3.5rem", 
+            borderRadius: "4px",
+            border: "1px solid var(--border-strong)",
+            background: "#fff",
+            boxShadow: "none",
             resize: "none"
           }}
         />
         
         {/* Floating controls inside textarea area */}
-        <div style={{ position: "absolute", bottom: "14px", left: "14px", right: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button className="btn btn-outline btn-sm" onClick={insertBlank} type="button" style={{ borderRadius: "20px", background: "#fff", borderColor: "var(--border-strong)", padding: "0.35rem 0.8rem", boxShadow: "0 2px 4px rgba(0,0,0,0.04)" }}>
-            <Plus size={14} /> Insert Blank (__)
+        <div style={{ position: "absolute", bottom: "10px", left: "10px", right: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button className="btn btn-outline btn-sm" onClick={insertBlank} type="button" style={{ borderRadius: "4px", background: "#f8f9fa", borderColor: "var(--border)", padding: "0.3rem 0.75rem", boxShadow: "none", color: "var(--text)" }}>
+            <Plus size={13} /> Insert Blank (__)
           </button>
           
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: blankCount === 0 ? "#EF4444" : "#10B981", background: blankCount === 0 ? "#FEF2F2" : "#ECFDF5", padding: "5px 10px", borderRadius: "12px", border: `1px solid ${blankCount === 0 ? "#FECACA" : "#A7F3D0"}` }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", background: "transparent", padding: 0 }}>
             {blankCount} blank{blankCount !== 1 ? "s" : ""}
           </span>
         </div>
@@ -76,14 +79,14 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
       {/* Examples */}
       {!sentence && (
         <div style={{ marginTop: "-0.5rem" }}>
-          <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Or pick a template:</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>Quick Templates</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             {examples.map((ex, i) => (
               <button 
                 key={i} 
                 className="btn btn-ghost btn-sm" 
                 onClick={() => setSentence(ex)}
-                style={{ fontSize: "0.8rem", fontWeight: 500, borderRadius: "20px", border: "1px dashed var(--border-strong)", color: "var(--text-secondary)", background: "transparent" }}
+                style={{ fontSize: "0.8rem", fontWeight: 500, borderRadius: "4px", border: "1px solid var(--border)", color: "var(--text)", padding: "0.3rem 0.75rem", background: "#fff" }}
               >
                 {ex.replace("__", "___")}
               </button>
@@ -94,20 +97,17 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
 
       {/* Real-time Preview */}
       {sentence && (
-        <div className="fade-in" style={{ background: "linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary))", borderRadius: "var(--radius-lg)", padding: "1.5rem", border: "1px solid var(--border)", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "1.25rem" }}>
-            <Eye size={14} color="var(--accent-dark)" />
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Audience Preview</span>
-          </div>
-          <p className="sentence-display" style={{ fontSize: "1.25rem", textAlign: "left", lineHeight: 1.7 }}>
+        <div className="fade-in" style={{ background: "#F8FAFC", borderRadius: "4px", padding: "1.5rem", border: "1px solid var(--border)", borderLeft: "4px solid var(--accent-dark)" }}>
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1rem" }}>Audience Preview</p>
+          <p className="sentence-display" style={{ fontSize: "1.2rem", textAlign: "left", lineHeight: 1.6, color: "var(--text)", fontWeight: 500 }}>
             {parts.map((part, i) => (
               <span key={i}>
                 {part}
                 {i < parts.length - 1 && (
                   <span style={{
                     display: "inline-block", minWidth: 60,
-                    borderBottom: "3px solid var(--accent)",
-                    marginInline: "6px", color: "var(--accent-text)",
+                    borderBottom: "2px solid var(--accent-dark)",
+                    marginInline: "4px", color: "var(--accent-dark)",
                   }}>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                   </span>
@@ -353,30 +353,25 @@ export default function Host() {
                 <span style={{ marginLeft: "0.5rem", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-secondary)" }}>Compose → Launch → Results</span>
               </div>
 
-              <div className="card" style={{ padding: "2.5rem", boxShadow: "0 10px 40px rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.06)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "0.5rem" }}>
-                  <div style={{ background: "var(--accent-glow)", padding: "8px", borderRadius: "8px" }}>
-                    <LayoutDashboard size={18} color="var(--accent-dark)" />
-                  </div>
-                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", fontWeight: 800, color: "var(--text)" }}>Craft Your Sentence</h2>
-                </div>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "2rem", lineHeight: 1.6, marginLeft: "44px" }}>
+              <div className="card" style={{ padding: "3rem 2.5rem", borderRadius: "6px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid var(--border)" }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", fontWeight: 700, color: "var(--text)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Compose Sentence</h2>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "2.5rem", lineHeight: 1.6 }}>
                   Write a fill-in-the-blank sentence. Audience members will submit words to complete it, generating your live word cloud.
                 </p>
                 <SentenceEditor sentence={sentence} setSentence={setSentence} textareaRef={textareaRef} />
                 
-                {error && <div className="fade-in" style={{ background: "#FEF2F2", color: "#B91C1C", padding: "0.85rem 1rem", borderRadius: "8px", fontSize: "0.85rem", marginTop: "1.25rem", display: "flex", alignItems: "center", gap: "8px", fontWeight: 500, border: "1px solid #FECACA" }}>
+                {error && <div className="fade-in" style={{ background: "#FEF2F2", color: "#B91C1C", padding: "0.85rem 1rem", borderRadius: "4px", fontSize: "0.85rem", marginTop: "1.25rem", display: "flex", alignItems: "center", gap: "8px", fontWeight: 500, border: "1px solid #FECACA" }}>
                   <StopCircle size={16} /> {error}
                 </div>}
                 
-                <div style={{ marginTop: "2rem", paddingTop: "1.75rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
+                <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
                   <button 
                     className="btn btn-primary btn-lg" 
                     onClick={handleCreate} 
                     disabled={creating}
-                    style={{ fontSize: "0.9rem", padding: "0.9rem 2.5rem", boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}
+                    style={{ fontSize: "0.85rem", padding: "0.8rem 2rem", borderRadius: "4px", letterSpacing: "0.05em", boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}
                   >
-                    {creating ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <> <Zap size={16} /> Launch Game & Show QR</>}
+                    {creating ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : "LAUNCH GAME & SHOW QR"}
                   </button>
                 </div>
               </div>

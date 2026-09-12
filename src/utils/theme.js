@@ -22,6 +22,15 @@ export const EVENTS = {
     logo: "/best_tech_brands_2026.png",
     colors: { accent: "#00AEEF", dark: "#00529B" },
   },
+  "consumer": {
+    id: "consumer",
+    name: "ET Edge Best Seller Consumer Brands 2026",
+    shortName: "Consumer Brands",
+    date: "2026",
+    location: "TBD",
+    logo: "/best_seller_consumer_brands_2026.png",
+    colors: { accent: "#D4AF37", dark: "#0B132C" },
+  },
 };
 
 export function applyTheme(eventId) {

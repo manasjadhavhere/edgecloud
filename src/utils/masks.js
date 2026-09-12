@@ -57,6 +57,13 @@ const CLOUD_SVG = `
 </svg>
 `;
 
+// Consumer Brands SVG — Badge seal with zig-zag edge
+const CONSUMER_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -50 1000 600" width="1000" height="600" preserveAspectRatio="none">
+  <polygon points="400,10 416,41 438,13 449,46 474,22 480,56 509,36 510,71 541,56 536,90 570,80 560,114 594,109 579,140 614,141 594,170 628,176 604,201 637,212 609,234 640,250 609,266 637,288 604,299 628,324 594,330 614,359 579,360 594,391 560,386 570,420 536,410 541,444 510,429 509,464 480,444 474,478 449,454 438,487 416,459 400,490 384,459 362,487 351,454 326,478 320,444 291,464 290,429 259,444 264,410 230,420 240,386 206,391 221,360 186,359 206,330 172,324 196,299 163,288 191,266 160,250 191,234 163,212 196,201 172,176 206,170 186,141 221,140 206,109 240,114 230,80 264,90 259,56 290,71 291,36 320,56 326,22 351,46 362,13 384,41" fill="#000" />
+</svg>
+`;
+
 function svgToMaskCanvas(svgString, width, height) {
   return new Promise((resolve) => {
     const blob = new Blob([svgString], { type: "image/svg+xml" });
@@ -79,5 +86,6 @@ function svgToMaskCanvas(svgString, width, height) {
 export async function getMaskCanvas(theme, width, height) {
   if (theme === "iconic") return svgToMaskCanvas(CROWN_SVG, width, height);
   if (theme === "tech")   return svgToMaskCanvas(CLOUD_SVG,  width, height);
+  if (theme === "consumer") return svgToMaskCanvas(CONSUMER_SVG, width, height);
   return null;
 }

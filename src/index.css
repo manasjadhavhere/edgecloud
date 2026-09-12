@@ -60,6 +60,14 @@
   --accent-text:  #40C4FF;
 }
 
+/* Best Seller Consumer Brands — Navy / Gold */
+[data-theme="consumer"] {
+  --accent:       #D4AF37;
+  --accent-dark:  #0B132C;
+  --accent-glow:  rgba(212,175,55,0.15);
+  --accent-text:  #C5A059;
+}
+
 /* ── Base ─────────────────────────────────────────────────── */
 html, body, #root {
   min-height: 100vh;

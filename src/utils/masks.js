@@ -2,56 +2,66 @@
 /**
  * Generates precise SVG shape masks for word cloud silhouettes.
  * Crown → Iconic Brands | Cloud → Best Tech Brands
+ * 
+ * The mask canvas must have:
+ *   - BLACK pixels (#000) where words ARE ALLOWED to be placed
+ *   - Transparent pixels where words are NOT allowed
+ * wordcloud2 reads pixel data: non-transparent = occupied, transparent = free.
+ * We FLIP this by painting the mask black and using it as a "drawn" background.
  */
 
-// Crown SVG: classic 3-point crown with detailed silhouette
+// Crown SVG — a proper 5-point crown with base band
 const CROWN_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520">
-  <path d="
-    M 60,460
-    L 30,200
-    L 200,330
-    L 400,60
-    L 600,330
-    L 770,200
-    L 740,460
-    Z
-    M 60,460
-    Q 100,480 160,475
-    Q 200,480 240,465
-    Q 280,478 320,468
-    Q 360,480 400,472
-    Q 440,480 480,468
-    Q 520,478 560,465
-    Q 600,480 640,475
-    Q 700,480 740,460
-    L 60,460
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <!-- Crown body: 5 peaks -->
+  <polygon points="
+    50,420
+    50,200
+    200,320
+    400,60
+    600,320
+    750,200
+    750,420
   " fill="#000"/>
-  <ellipse cx="200" cy="340" rx="30" ry="30" fill="#000"/>
-  <ellipse cx="400" cy="70" rx="35" ry="35" fill="#000"/>
-  <ellipse cx="600" cy="340" rx="30" ry="30" fill="#000"/>
+  <!-- Crown base band -->
+  <rect x="50" y="380" width="700" height="60" rx="8" fill="#000"/>
+  <!-- Decorative gem circles at tips -->
+  <circle cx="50" cy="200" r="22" fill="#000"/>
+  <circle cx="750" cy="200" r="22" fill="#000"/>
+  <circle cx="200" cy="320" r="20" fill="#000"/>
+  <circle cx="600" cy="320" r="20" fill="#000"/>
+  <circle cx="400" cy="60" r="28" fill="#000"/>
+  <!-- Fill gaps between peak bottoms and base (left) -->
+  <polygon points="50,200 200,320 50,420" fill="#000"/>
+  <!-- Fill gaps between peak bottoms and base (right) -->
+  <polygon points="750,200 600,320 750,420" fill="#000"/>
+  <!-- Fill gaps between middle peaks and base (left inner) -->
+  <polygon points="200,320 400,60 400,420" fill="#000"/>
+  <!-- Fill gaps between middle peaks and base (right inner) -->
+  <polygon points="400,60 600,320 400,420" fill="#000"/>
 </svg>
 `;
 
-// Cloud SVG: wide, fluffy word-cloud shape from reference image
+// Cloud SVG — a wide, fluffy multi-lobe cloud shape
 const CLOUD_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520">
-  <ellipse cx="190" cy="320" rx="155" ry="130" fill="#000"/>
-  <ellipse cx="340" cy="240" rx="170" ry="150" fill="#000"/>
-  <ellipse cx="510" cy="220" rx="185" ry="165" fill="#000"/>
-  <ellipse cx="650" cy="310" rx="145" ry="125" fill="#000"/>
-  <rect x="60"  y="320" width="680" height="140" rx="0" fill="#000"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <ellipse cx="170" cy="330" rx="145" ry="115" fill="#000"/>
+  <ellipse cx="300" cy="250" rx="160" ry="140" fill="#000"/>
+  <ellipse cx="460" cy="220" rx="185" ry="160" fill="#000"/>
+  <ellipse cx="630" cy="270" rx="155" ry="130" fill="#000"/>
+  <ellipse cx="730" cy="360" rx="100" ry="90"  fill="#000"/>
+  <rect x="50"  y="330" width="720" height="120" fill="#000"/>
 </svg>
 `;
 
 function svgToMaskCanvas(svgString, width, height) {
   return new Promise((resolve) => {
     const blob = new Blob([svgString], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = width;
+      canvas.width  = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);

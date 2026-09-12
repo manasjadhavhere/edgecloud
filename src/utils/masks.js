@@ -20,14 +20,16 @@ const CROWN_SVG = `
     L 150 340
     Q 90 330 20 230
     Z
-  " fill="#000" stroke="#000" stroke-width="20" stroke-linejoin="round" />
-  <circle cx="20" cy="230" r="15" fill="#000"/>
-  <circle cx="150" cy="340" r="10" fill="#000"/>
-  <circle cx="220" cy="130" r="15" fill="#000"/>
-  <circle cx="400" cy="30" r="20" fill="#000"/>
-  <circle cx="580" cy="130" r="15" fill="#000"/>
-  <circle cx="650" cy="340" r="10" fill="#000"/>
-  <circle cx="780" cy="230" r="15" fill="#000"/>
+  " fill="#000" stroke="#000" stroke-width="40" stroke-linejoin="round" />
+  
+  <!-- Massive circles at the tips to ensure words can fit inside them and create the rounded crown look -->
+  <circle cx="20" cy="230" r="45" fill="#000"/>
+  <circle cx="150" cy="340" r="25" fill="#000"/>
+  <circle cx="220" cy="130" r="45" fill="#000"/>
+  <circle cx="400" cy="30" r="55" fill="#000"/>
+  <circle cx="580" cy="130" r="45" fill="#000"/>
+  <circle cx="650" cy="340" r="25" fill="#000"/>
+  <circle cx="780" cy="230" r="45" fill="#000"/>
 </svg>
 `;
 

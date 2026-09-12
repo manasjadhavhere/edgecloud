@@ -132,7 +132,7 @@ export default function HostSelectEvent() {
                   <button className="btn-share" onClick={(e) => e.stopPropagation()}>
                     <Share2 size={16} />
                   </button>
-                  <button className="btn-action">
+                  <button className="btn btn-primary" style={{ flex: 1 }}>
                     VIEW DETAIL
                   </button>
                 </div>

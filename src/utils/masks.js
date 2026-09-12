@@ -7,29 +7,29 @@
 // Crown SVG — a precise 5-point crown modeled after the reference image
 const CROWN_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <!-- Precision drawn crown base with bezier curves for graceful stems -->
   <path d="
-    M 100 460
-    Q 400 490 700 460
-    L 780 230
-    Q 710 330 650 340
-    L 580 130
-    Q 510 280 450 290
-    L 400 30
-    L 350 290
-    Q 290 280 220 130
-    L 150 340
-    Q 90 330 20 230
+    M 150 450
+    Q 400 470 650 450
+    C 700 430, 750 360, 750 280
+    C 730 330, 680 350, 630 350
+    C 620 280, 610 200, 590 150
+    C 560 250, 520 300, 460 300
+    C 450 200, 420 120, 400 80
+    C 380 120, 350 200, 340 300
+    C 280 300, 240 250, 210 150
+    C 190 200, 180 280, 170 350
+    C 120 350, 70 330, 50 280
+    C 50 360, 100 430, 150 450
     Z
-  " fill="#000" stroke="#000" stroke-width="40" stroke-linejoin="round" />
+  " fill="#000" />
   
-  <!-- Massive circles at the tips to ensure words can fit inside them and create the rounded crown look -->
-  <circle cx="20" cy="230" r="45" fill="#000"/>
-  <circle cx="150" cy="340" r="25" fill="#000"/>
-  <circle cx="220" cy="130" r="45" fill="#000"/>
-  <circle cx="400" cy="30" r="55" fill="#000"/>
-  <circle cx="580" cy="130" r="45" fill="#000"/>
-  <circle cx="650" cy="340" r="25" fill="#000"/>
-  <circle cx="780" cy="230" r="45" fill="#000"/>
+  <!-- Distinct circular bulbs positioned perfectly at the tips -->
+  <circle cx="400" cy="65" r="45" fill="#000" />    <!-- Center tip -->
+  <circle cx="210" cy="140" r="35" fill="#000" />   <!-- Left-middle tip -->
+  <circle cx="590" cy="140" r="35" fill="#000" />   <!-- Right-middle tip -->
+  <circle cx="50" cy="270" r="25" fill="#000" />    <!-- Far-left tip -->
+  <circle cx="750" cy="270" r="25" fill="#000" />   <!-- Far-right tip -->
 </svg>
 `;
 

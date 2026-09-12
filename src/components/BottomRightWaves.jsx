@@ -10,7 +10,7 @@ export default function BottomRightWaves() {
       height: "38%",
       minWidth: "300px",
       minHeight: "180px",
-      zIndex: -1, 
+      zIndex: 0, 
       pointerEvents: "none",
       transform: "scaleX(-1)" // Mirrors the graphic to fit perfectly in the bottom-right corner
     }}>

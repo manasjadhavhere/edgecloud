@@ -3,9 +3,9 @@ import { useEffect, useRef, useCallback } from "react";
 import { getMaskCanvas } from "../utils/masks";
 
 const THEME_COLORS = {
-  iconic: ["#C5A059","#E8C179","#8B1818","#D4AF37","#A0522D","#CD853F","#B8860B","#8B6914"],
-  tech:   ["#00529B","#00AEEF","#40C4FF","#003D73","#0288D1","#01579B","#29B6F6","#4FC3F7"],
-  default:["#C5A059","#8B1818","#00529B","#00AEEF","#3FB950","#F85149","#D4AF37","#40C4FF"],
+  iconic: ["#8B1818","#C5A059","#A0522D","#8B6914","#5A0F0F","#990000","#6B4226","#B8860B"],
+  tech:   ["#00529B","#003D73","#01579B","#0288D1","#1565C0","#006064","#00838F","#0277BD"],
+  default:["#8B1818","#00529B","#16A34A","#B45309","#4338CA","#BE123C","#0F766E","#0369A1"],
 };
 
 export default function WordCloudViz({ words, forwardedRef, theme = "default" }) {

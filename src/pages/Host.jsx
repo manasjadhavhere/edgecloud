@@ -1,6 +1,5 @@
-// src/pages/Host.jsx
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { db } from "../firebase";
 import { ref, set, update } from "firebase/database";
 import { generateGameId, countBlanks, computeWordFrequencies } from "../utils/wordCount";
@@ -68,9 +67,9 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
                   <span style={{
                     display: "inline-block",
                     minWidth: 80,
-                    borderBottom: "3px solid #E8213C",
+                    borderBottom: "3px solid var(--primary-main, #E8213C)",
                     marginInline: "4px",
-                    color: "#E8213C",
+                    color: "var(--primary-main, #E8213C)",
                     fontFamily: "var(--font-display)",
                   }}>
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -133,6 +132,17 @@ function ParticipantList({ responses, game }) {
 // ── Main Host page ───────────────────────────────────────────
 export default function Host() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const eventId = location.state?.eventId;
+
+  useEffect(() => {
+    if (!eventId) {
+      navigate("/host-login");
+    } else {
+      document.body.className = `theme-${eventId}`;
+    }
+  }, [eventId, navigate]);
+
   const [step, setStep] = useState(1); // 1=compose, 2=live
   const [sentence, setSentence] = useState("");
   const [gameId, setGameId] = useState(null);
@@ -156,6 +166,7 @@ export default function Host() {
         sentence: sentence.trim(),
         status: "active",
         createdAt: Date.now(),
+        eventId: eventId || "default",
       });
       // Mark as globally active game
       await set(ref(db, "activeGame"), id);
@@ -286,9 +297,9 @@ export default function Host() {
                     <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
                       Real-time Word Cloud
                     </p>
-                    <div style={{ flex: 1, background: "linear-gradient(135deg,#F0F7FF 0%,#FFF5F0 50%,#F5F0FF 100%)", borderRadius: "var(--radius-md)", minHeight: "350px" }}>
+                    <div style={{ flex: 1, background: "linear-gradient(135deg, var(--bg) 0%, #FFF 50%, var(--bg) 100%)", borderRadius: "var(--radius-md)", minHeight: "350px" }}>
                       {responses.length > 0 ? (
-                        <WordCloudViz words={computeWordFrequencies(responses)} />
+                        <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} />
                       ) : (
                         <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}>
                           Waiting for words...

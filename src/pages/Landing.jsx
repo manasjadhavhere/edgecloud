@@ -138,7 +138,7 @@ export default function Landing() {
                 display: "flex",
                 flexDirection: "column",
               }}
-              onClick={() => navigate("/host")}
+              onClick={() => navigate("/host-login")}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-6px)";
                 e.currentTarget.style.boxShadow = "0 20px 60px rgba(232,33,60,0.18)";

@@ -47,6 +47,14 @@ export function useGame(gameId) {
     return () => off(gameRef, "value", unsubscribe);
   }, [gameId]);
 
+  useEffect(() => {
+    if (game?.eventId) {
+      document.body.className = `theme-${game.eventId}`;
+    } else {
+      document.body.className = "";
+    }
+  }, [game?.eventId]);
+
   return { game, responses, loading, error };
 }
 

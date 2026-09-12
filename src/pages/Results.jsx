@@ -7,7 +7,7 @@ import FloatingOrbs from "../components/FloatingOrbs";
 import WordCloudViz from "../components/WordCloudViz";
 import Top10Table from "../components/Top10Table";
 import Confetti from "../components/Confetti";
-import { Download, RotateCcw, Trophy } from "lucide-react";
+import { Download, RotateCcw, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Results() {
   const { gameId } = useParams();
@@ -15,6 +15,7 @@ export default function Results() {
   const { game, responses, loading } = useGame(gameId);
   const canvasRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [viewIndex, setViewIndex] = useState(0); // 0 = Cloud, 1 = Table
 
   const frequencies = computeWordFrequencies(responses);
 
@@ -131,48 +132,75 @@ export default function Results() {
           ) : (
             <div className="flex flex-col gap-4">
 
-              {/* Word Cloud */}
-              <div className="card scale-in">
-                <div className="flex items-center justify-between" style={{ marginBottom: "1rem" }}>
-                  <h2 className="section-title">Word Cloud</h2>
-                  <button
-                    className="btn btn-emerald btn-sm"
-                    onClick={handleDownload}
-                    disabled={downloading}
+              {viewIndex === 0 && (
+                /* Word Cloud */
+                <div className="card scale-in relative" style={{ position: "relative" }}>
+                  <div className="flex items-center justify-between" style={{ marginBottom: "1rem" }}>
+                    <h2 className="section-title">Word Cloud</h2>
+                    <button
+                      className="btn btn-emerald btn-sm"
+                      onClick={handleDownload}
+                      disabled={downloading}
+                    >
+                      <Download size={15} />
+                      {downloading ? "Saving…" : "Download PNG"}
+                    </button>
+                  </div>
+
+                  {/* Capture target for html2canvas */}
+                  <div
+                    id="wordcloud-capture"
+                    style={{
+                      borderRadius: "var(--radius-md)",
+                      overflow: "hidden",
+                      background: "var(--bg)",
+                      padding: "1rem",
+                    }}
                   >
-                    <Download size={15} />
-                    {downloading ? "Saving…" : "Download PNG"}
-                  </button>
+                    {/* Title inside capture */}
+                    <p style={{
+                      fontFamily: "var(--font-display)", fontSize: "1.1rem",
+                      textAlign: "center", color: "var(--muted)",
+                      marginBottom: "0.5rem",
+                    }}>
+                      EdgeCloud · Game #{gameId}
+                    </p>
+                    <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} />
+                  </div>
                 </div>
+              )}
 
-                {/* Capture target for html2canvas */}
-                <div
-                  id="wordcloud-capture"
-                  style={{
-                    borderRadius: "var(--radius-md)",
-                    overflow: "hidden",
-                    background: "linear-gradient(135deg,#F0F7FF 0%,#FFF5F0 50%,#F5F0FF 100%)",
-                    padding: "1rem",
-                  }}
+              {viewIndex === 1 && (
+                /* Top 10 table */
+                <div className="card scale-in">
+                  <h2 className="section-title" style={{ marginBottom: "1.25rem" }}>
+                    🏆 Top Words
+                  </h2>
+                  <Top10Table words={frequencies} />
+                </div>
+              )}
+
+              {/* Navigation Arrows */}
+              <div className="flex items-center justify-center gap-4" style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+                <button 
+                  className="btn btn-ghost" 
+                  style={{ borderRadius: "50%", padding: "0.8rem" }}
+                  onClick={() => setViewIndex(0)}
+                  disabled={viewIndex === 0}
                 >
-                  {/* Title inside capture */}
-                  <p style={{
-                    fontFamily: "var(--font-display)", fontSize: "1.1rem",
-                    textAlign: "center", color: "var(--muted)",
-                    marginBottom: "0.5rem",
-                  }}>
-                    EdgeCloud · Game #{gameId}
-                  </p>
-                  <WordCloudViz words={frequencies} forwardedRef={canvasRef} />
-                </div>
-              </div>
-
-              {/* Top 10 table */}
-              <div className="card fade-in" style={{ animationDelay: "0.3s" }}>
-                <h2 className="section-title" style={{ marginBottom: "1.25rem" }}>
-                  🏆 Top Words
-                </h2>
-                <Top10Table words={frequencies} />
+                  <ChevronLeft size={24} />
+                </button>
+                <span style={{ fontWeight: 700, color: "var(--muted)" }}>
+                  {viewIndex === 0 ? "1 / 2" : "2 / 2"}
+                </span>
+                <button 
+                  className="btn btn-ghost" 
+                  style={{ borderRadius: "50%", padding: "0.8rem" }}
+                  onClick={() => setViewIndex(1)}
+                  disabled={viewIndex === 1}
+                >
+                  <ChevronRight size={24} />
+                </button>
               </div>
 
               {/* Actions */}

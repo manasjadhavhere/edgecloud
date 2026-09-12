@@ -21,44 +21,6 @@ export default function Landing() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", position: "relative" }}>
       <B2BBackground />
 
-      {/* Side Images and Borders */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
-        
-        {/* Left Image */}
-        <img 
-          src="/left_side_image.webp" 
-          alt=""
-          style={{
-            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-            objectFit: "cover", clipPath: "polygon(0 0, 30% 0, 10% 100%, 0% 100%)"
-          }} 
-        />
-        {/* Right Image */}
-        <img 
-          src="/right_image.jpg" 
-          alt=""
-          style={{
-            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-            objectFit: "cover", clipPath: "polygon(80% 0, 100% 0, 100% 100%, 60% 100%)"
-          }} 
-        />
-        
-        {/* Borders */}
-        <svg 
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-          preserveAspectRatio="none" 
-          viewBox="0 0 100 100"
-        >
-          {/* Left Line */}
-          <line x1="30" y1="0" x2="10" y2="100" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
-          <line x1="30" y1="0" x2="10" y2="100" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-          
-          {/* Right Line */}
-          <line x1="80" y1="0" x2="60" y2="100" stroke="black" strokeWidth="6" vectorEffect="non-scaling-stroke" />
-          <line x1="80" y1="0" x2="60" y2="100" stroke="#D32F2F" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-        </svg>
-      </div>
-
       {/* Top right Host Login */}
       <div style={{ position: "absolute", top: "1.5rem", right: "2rem", zIndex: 10 }}>
         <button className="btn btn-ghost btn-sm" style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(4px)" }} onClick={() => navigate("/host-login")}>

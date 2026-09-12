@@ -6,6 +6,7 @@ import { ref, push } from "firebase/database";
 import { useGame } from "../hooks/useGame";
 import { countBlanks } from "../utils/wordCount";
 import BgGrid from "../components/BgGrid";
+import BottomRightWaves from "../components/BottomRightWaves";
 import { EVENTS } from "../utils/theme";
 import { Send, Loader, CheckCircle, ArrowRight } from "lucide-react";
 
@@ -16,6 +17,7 @@ function NameEntry({ onSubmit, eventId }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
+      <BottomRightWaves />
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="fade-in">
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           {event ? (
@@ -85,6 +87,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <BgGrid />
+      <BottomRightWaves />
       {/* Topbar */}
       <div style={{ position: "relative", zIndex: 1, height: 52, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", padding: "0 1.5rem", background: "var(--bg-secondary)", gap: "1rem" }}>
         {event ? (
@@ -173,6 +176,7 @@ function ThankYouScreen({ eventId }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
+      <BottomRightWaves />
       <div className="card fade-in" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2.5rem 2rem" }}>
         <CheckCircle size={48} style={{ color: "#16A34A", margin: "0 auto 1.25rem" }} />
         {event && <img src={event.logo} alt={event.name} style={{ height: 40, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}
@@ -210,6 +214,7 @@ export default function Join() {
   if (error || !game) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
       <BgGrid />
+      <BottomRightWaves />
       <div className="card" style={{ position: "relative", zIndex: 1, maxWidth: 360, width: "100%", textAlign: "center" }}>
         <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.4rem" }}>Session Not Found</h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", marginBottom: "1.25rem" }}>

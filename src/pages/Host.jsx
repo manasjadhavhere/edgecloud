@@ -6,6 +6,7 @@ import { ref, set, update } from "firebase/database";
 import { generateGameId, countBlanks, computeWordFrequencies } from "../utils/wordCount";
 import { useGame } from "../hooks/useGame";
 import BgGrid from "../components/BgGrid";
+import BottomRightWaves from "../components/BottomRightWaves";
 import QRDisplay from "../components/QRDisplay";
 import WordCloudViz from "../components/WordCloudViz";
 import { EVENTS, isLoggedIn, getStoredTheme, storeTheme, applyTheme, setLoggedOut } from "../utils/theme";
@@ -216,6 +217,7 @@ export default function Host() {
   return (
     <div className="admin-layout">
       <BgGrid />
+      <BottomRightWaves />
 
       {/* ── Sidebar ────────────────────────────────────────── */}
       <aside className="admin-sidebar glossy-dark">

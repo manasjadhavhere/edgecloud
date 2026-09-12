@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useGame } from "../hooks/useGame";
 import { computeWordFrequencies } from "../utils/wordCount";
 import BgGrid from "../components/BgGrid";
+import BottomRightWaves from "../components/BottomRightWaves";
 import WordCloudViz from "../components/WordCloudViz";
 import Top10Table from "../components/Top10Table";
 import Confetti from "../components/Confetti";
@@ -49,6 +50,7 @@ export default function Results() {
   return (
     <div className="admin-layout">
       <BgGrid />
+      <BottomRightWaves />
       <Confetti active={true} />
 
       {/* Sidebar */}

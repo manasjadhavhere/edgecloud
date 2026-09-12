@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BgGrid from "../components/BgGrid";
+import BottomRightWaves from "../components/BottomRightWaves";
 import { EVENTS, storeTheme, getStoredTheme, isLoggedIn, applyTheme, setLoggedOut } from "../utils/theme";
 import { Share2, Layers, StopCircle, Zap, LogOut } from "lucide-react";
 import { useActiveGame, useGame } from "../hooks/useGame";
@@ -39,6 +40,7 @@ export default function HostSelectEvent() {
   return (
     <div className="admin-layout">
       <BgGrid />
+      <BottomRightWaves />
 
       {/* Sidebar */}
       <aside className="admin-sidebar glossy-dark">

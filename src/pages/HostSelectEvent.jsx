@@ -3,14 +3,13 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BgGrid from "../components/BgGrid";
 import { EVENTS, storeTheme, getStoredTheme, isLoggedIn, applyTheme } from "../utils/theme";
-import { ChevronRight, Layers } from "lucide-react";
+import { Share2, Layers } from "lucide-react";
 
 export default function HostSelectEvent() {
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoggedIn()) { navigate("/host-login", { replace: true }); return; }
-    // Re-apply stored theme if returning to this page
     const stored = getStoredTheme();
     if (stored) applyTheme(stored);
   }, [navigate]);
@@ -25,21 +24,23 @@ export default function HostSelectEvent() {
       <BgGrid />
 
       {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid var(--border)" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+      <aside className="admin-sidebar glossy-dark">
+        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         </div>
         <div style={{ padding: "0.75rem", flex: 1 }}>
-          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Events</p>
+          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Events</p>
           {Object.values(EVENTS).map((evt) => (
-            <button key={evt.id} className="nav-item" onClick={() => selectEvent(evt.id)}>
-              <img src={evt.logo} alt={evt.shortName} style={{ width: 20, height: 20, objectFit: "contain", borderRadius: 3 }} />
-              <span style={{ fontSize: "0.82rem" }}>{evt.shortName}</span>
+            <button key={evt.id} className="nav-item dark-nav" onClick={() => selectEvent(evt.id)}>
+              <img src={evt.logo} alt={evt.shortName} style={{ width: 20, height: 20, objectFit: "contain", borderRadius: 3, background: "#fff", padding: 2 }} />
+              <span>{evt.shortName}</span>
             </button>
           ))}
         </div>
-        <div style={{ padding: "1rem", borderTop: "1px solid var(--border)" }}>
-          <span className="badge badge-green"><span className="live-dot" style={{ width: 5, height: 5 }} /> Host Session Active</span>
+        <div style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <span className="badge badge-green" style={{ background: "rgba(63,185,80,0.15)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.2)" }}>
+            <span className="live-dot" style={{ width: 5, height: 5 }} /> Host Session Active
+          </span>
         </div>
       </aside>
 
@@ -57,52 +58,34 @@ export default function HostSelectEvent() {
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.25rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem" }}>
             {Object.values(EVENTS).map((evt) => (
-              <div
-                key={evt.id}
-                className="card scale-in"
-                style={{ cursor: "pointer", transition: "border-color 0.2s", display: "flex", flexDirection: "column", gap: "1.25rem" }}
-                onClick={() => selectEvent(evt.id)}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-              >
-                {/* Logo */}
-                <div style={{
-                  height: 80, borderRadius: "var(--radius-md)",
-                  background: "var(--bg-secondary)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  border: "1px solid var(--border)", overflow: "hidden", padding: "0.75rem",
-                }}>
-                  <img
-                    src={evt.logo}
-                    alt={evt.name}
-                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
-                  />
+              <div key={evt.id} className="event-card scale-in" onClick={() => selectEvent(evt.id)}>
+                {/* Top Logo Area */}
+                <div className="event-card-logo">
+                  <img src={evt.logo} alt={evt.shortName} />
+                </div>
+                
+                {/* Red Date Banner */}
+                <div className="event-card-date">
+                  {evt.date}
                 </div>
 
-                <div>
-                  <p className="label-caps" style={{ marginBottom: "0.35rem" }}>Event</p>
-                  <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.3rem" }}>{evt.name}</h3>
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                    Word cloud will use the {evt.id === "iconic" ? "crown" : "cloud"} shape with event-specific branding.
-                  </p>
+                {/* Content Area */}
+                <div className="event-card-content">
+                  <h3>{evt.name.toUpperCase()}</h3>
+                  <p>{evt.location}</p>
                 </div>
 
-                {/* Color preview */}
-                <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: evt.colors.accent }} />
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: evt.colors.dark }} />
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginLeft: "0.2rem" }}>Event palette</span>
+                {/* Footer Actions */}
+                <div className="event-card-footer">
+                  <button className="btn-share" onClick={(e) => e.stopPropagation()}>
+                    <Share2 size={16} />
+                  </button>
+                  <button className="btn-action">
+                    VIEW DETAIL
+                  </button>
                 </div>
-
-                <button
-                  className="btn btn-primary"
-                  style={{ marginTop: "auto" }}
-                  onClick={(e) => { e.stopPropagation(); selectEvent(evt.id); }}
-                >
-                  Launch Game <ChevronRight size={15} />
-                </button>
               </div>
             ))}
           </div>

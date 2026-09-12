@@ -275,6 +275,7 @@ h1, h2, h3, h4 {
 textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
 
 /* ── Sidebar Nav ──────────────────────────────────────────── */
+/* ── Sidebar Nav ──────────────────────────────────────────── */
 .nav-item {
   display: flex;
   align-items: center;
@@ -298,6 +299,117 @@ textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
   color: var(--accent-text);
   border-left: 2px solid var(--accent);
   padding-left: calc(1rem - 2px);
+}
+
+/* Glossy Dark Sidebar variant */
+.admin-sidebar.glossy-dark {
+  background: linear-gradient(180deg, #1A1C23 0%, #0D0E12 100%);
+  border-right: 1px solid #2A2D35;
+  color: #fff;
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.05);
+}
+.glossy-dark .nav-item.dark-nav {
+  color: #94A3B8;
+}
+.glossy-dark .nav-item.dark-nav:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.glossy-dark .nav-item.dark-nav.active {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-left: 2px solid var(--accent);
+}
+
+/* ── Event Cards (Reference Style) ────────────────────────── */
+.event-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.event-card:hover {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.event-card-logo {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.event-card-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.event-card-date {
+  background: #C8102E; /* Red banner */
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  letter-spacing: 0.05em;
+}
+.event-card-content {
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  flex: 1;
+}
+.event-card-content h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1F2937;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+.event-card-content p {
+  color: #6B7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.event-card-footer {
+  display: flex;
+  padding: 1rem 1.25rem;
+  gap: 0.75rem;
+  background: #fff;
+  border-top: 1px solid #F3F4F6;
+}
+.btn-share {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-share:hover { color: #4B5563; border-color: #D1D5DB; background: #F9FAFB; }
+.btn-action {
+  flex: 1;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  border-radius: 4px;
+  color: #1F2937;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-action:hover {
+  border-color: #D1D5DB;
+  background: #F9FAFB;
 }
 
 /* ── Badge / Chip ─────────────────────────────────────────── */

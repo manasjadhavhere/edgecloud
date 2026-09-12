@@ -52,26 +52,26 @@ export default function Results() {
       <Confetti active={true} />
 
       {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid var(--border)" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+      <aside className="admin-sidebar glossy-dark">
+        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         </div>
 
         <div style={{ padding: "0.75rem", flex: 1 }}>
           {event && (
-            <div style={{ padding: "0.75rem 1rem", background: "var(--accent-glow)", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)", marginBottom: "1rem" }}>
-              <img src={event.logo} alt={event.shortName} style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "0.4rem" }} />
-              <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--accent-text)" }}>{event.shortName}</p>
+            <div style={{ padding: "0.75rem 1rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: "1rem" }}>
+              <img src={event.logo} alt={event.shortName} style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "0.4rem", background: "#fff", padding: 2, borderRadius: 2 }} />
+              <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "#fff" }}>{event.shortName}</p>
             </div>
           )}
 
-          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Results</p>
+          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Results</p>
           {VIEWS.map((v, i) => {
             const Icon = v.icon;
             return (
               <button
                 key={i}
-                className={`nav-item ${viewIndex === i ? "active" : ""}`}
+                className={`nav-item dark-nav ${viewIndex === i ? "active" : ""}`}
                 onClick={() => setViewIndex(i)}
               >
                 <Icon size={15} /> {v.label}

@@ -165,26 +165,26 @@ export default function Host() {
       <BgGrid />
 
       {/* ── Sidebar ────────────────────────────────────────── */}
-      <aside className="admin-sidebar">
-        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid var(--border)" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+      <aside className="admin-sidebar glossy-dark">
+        <div style={{ padding: "1.25rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 28, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
         </div>
 
         <div style={{ padding: "0.75rem", flex: 1 }}>
-          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Navigation</p>
-          <button className="nav-item active">
-            <LayoutDashboard size={15} /> Game Session
-          </button>
+          {event && (
+            <div style={{ padding: "0.75rem 1rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: "1rem" }}>
+              <img src={event.logo} alt={event.shortName} style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "0.4rem", background: "#fff", padding: 2, borderRadius: 2 }} />
+              <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "#fff" }}>{event.shortName}</p>
+            </div>
+          )}
 
-          <div style={{ marginTop: "1.5rem" }}>
-            <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem" }}>Event</p>
-            {event && (
-              <div style={{ padding: "0.75rem 1rem", background: "var(--accent-glow)", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)" }}>
-                <img src={event.logo} alt={event.shortName} style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "0.5rem" }} />
-                <p style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent-text)" }}>{event.shortName}</p>
-              </div>
-            )}
-          </div>
+          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Navigation</p>
+          <button className={`nav-item dark-nav ${step === 1 ? "active" : ""}`} onClick={() => setStep(1)}>
+            <LayoutDashboard size={15} /> Compose Sentence
+          </button>
+          <button className={`nav-item dark-nav ${step === 2 ? "active" : ""}`} onClick={() => setStep(2)} disabled={!gameId}>
+            <Users size={15} /> Live Session
+          </button>
 
           {step === 2 && gameId && (
             <div style={{ marginTop: "1.5rem" }}>

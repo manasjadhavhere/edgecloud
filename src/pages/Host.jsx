@@ -238,19 +238,7 @@ export default function Host() {
   async function handleEnd() {
     if (!gameId) return;
 
-    // Capture the current state of the word cloud canvas as an image
-    let finalCloudImage = null;
-    const canvas = document.querySelector("canvas");
-    if (canvas) {
-      try {
-        finalCloudImage = canvas.toDataURL("image/png");
-      } catch (e) {
-        console.error("Failed to capture cloud image:", e);
-      }
-    }
-
     const updates = { status: "ended", endedAt: Date.now() };
-    if (finalCloudImage) updates.finalCloudImage = finalCloudImage;
 
     await update(ref(db, `games/${gameId}`), updates);
     await set(ref(db, "activeGame"), null);

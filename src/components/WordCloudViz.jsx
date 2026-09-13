@@ -19,7 +19,7 @@ const THEME_COLORS = {
  *   2. Use destination-out to "punch out" the mask shape (making those pixels free)
  *   3. wordcloud2 then places words only in the transparent (free) region = inside the shape
  */
-export default function WordCloudViz({ words, forwardedRef, theme = "default" }) {
+export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
 
@@ -61,7 +61,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default" })
     let processedWords = [...words];
     const MIN_DENSITY = 350;
     
-    if (processedWords.length < MIN_DENSITY && processedWords.length > 0) {
+    if (fillShape && processedWords.length < MIN_DENSITY && processedWords.length > 0) {
       const fillerNeeded = MIN_DENSITY - processedWords.length;
       for (let i = 0; i < fillerNeeded; i++) {
         // Pick words to duplicate (favor lower-middle frequency words for background fill)

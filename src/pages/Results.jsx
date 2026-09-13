@@ -187,7 +187,7 @@ export default function Results() {
                       <img src={game.finalCloudImage} alt="Word Cloud" style={{ width: "100%", maxWidth: "1000px", height: "auto", objectFit: "contain", borderRadius: "var(--radius-sm)" }} />
                     </div>
                   ) : (
-                    <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} />
+                    <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} fillShape={true} />
                   )}
                 </div>
               </div>

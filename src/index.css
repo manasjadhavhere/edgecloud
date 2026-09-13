@@ -734,3 +734,109 @@ textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Responsive Mobile Enhancements ───────────────────────── */
+@media (max-width: 860px) {
+  /* Admin Layout Stacking */
+  .admin-layout {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .admin-sidebar {
+    width: 100%;
+    min-height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* When the sidebar is glossy dark, adjust the border color */
+  .admin-sidebar.glossy-dark {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .admin-main {
+    margin-left: 0;
+    flex: 1;
+  }
+  
+  .admin-topbar {
+    padding: 0 1rem;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .admin-content {
+    padding: 1rem;
+  }
+  
+  /* Auth Page */
+  .auth-page {
+    flex-direction: column;
+  }
+  
+  .auth-brand {
+    padding: 2rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    min-height: auto;
+  }
+  
+  .auth-form {
+    width: 100%;
+    max-width: 100%;
+    padding: 2rem 1rem;
+  }
+  
+  /* Utilities for padding reduction */
+  .page {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 540px) {
+  /* Typography Scaling */
+  .display-title {
+    font-size: clamp(1.6rem, 8vw, 2.2rem);
+  }
+  
+  .sentence-display {
+    font-size: clamp(1rem, 5vw, 1.3rem);
+    line-height: 1.6;
+  }
+  
+  .blank-input {
+    min-width: 70px;
+    padding: 0.1rem 0.2rem;
+  }
+  
+  /* Cards & Tables */
+  .card {
+    padding: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .rank-table th, .rank-table td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Event Card Logo */
+  .event-card-logo {
+    height: 100px;
+    padding: 1rem;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 0.6rem 1rem;
+  }
+}

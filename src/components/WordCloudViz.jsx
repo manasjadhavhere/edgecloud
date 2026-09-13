@@ -44,9 +44,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     const maskCanvas = await getMaskCanvas(theme, w, h);
 
     if (maskCanvas) {
-      // Step 1: Fill everything with near-transparent pixel — means "all occupied" for wordcloud2
+      // Step 1: Fill everything with opaque white — means "all occupied" for wordcloud2
+      // Since the wrapper has a white background, this will be invisible to the user.
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "rgba(0,0,0,0.01)";
+      ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, w, h);
 
       // Step 2: Punch out the shape area using the mask (black pixels in mask = free zone)

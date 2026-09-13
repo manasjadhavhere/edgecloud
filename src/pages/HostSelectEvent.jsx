@@ -44,11 +44,11 @@ export default function HostSelectEvent() {
 
       {/* Sidebar */}
       <aside className="admin-sidebar glossy-dark">
-        <div style={{ padding: "1.5rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "center" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 64, width: "auto", objectFit: "contain" }} />
+        <div className="sidebar-header" style={{ padding: "1.5rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "center" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 64, width: "auto", objectFit: "contain" }} className="sidebar-logo-img" />
         </div>
         
-        <div style={{ padding: "0.75rem", flex: 1 }}>
+        <div className="sidebar-content" style={{ padding: "0.75rem", flex: 1 }}>
           {/* Active Sessions Ribbon */}
           {activeGameId && (
             <div style={{ marginBottom: "1.5rem" }}>
@@ -76,16 +76,18 @@ export default function HostSelectEvent() {
             </div>
           )}
 
-          <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Events</p>
-          {Object.values(EVENTS).map((evt) => (
-            <button key={evt.id} className="nav-item dark-nav" onClick={() => selectEvent(evt.id)}>
-              <img src={evt.logo} alt={evt.shortName} style={{ width: 20, height: 20, objectFit: "contain", borderRadius: 3, background: "#fff", padding: 2 }} />
-              <span>{evt.shortName}</span>
-            </button>
-          ))}
+          <div className="sidebar-events-list">
+            <p className="label-caps" style={{ padding: "0.5rem 0.5rem 0.35rem", color: "rgba(255,255,255,0.5)" }}>Events</p>
+            {Object.values(EVENTS).map((evt) => (
+              <button key={evt.id} className="nav-item dark-nav" onClick={() => selectEvent(evt.id)}>
+                <img src={evt.logo} alt={evt.shortName} style={{ width: 20, height: 20, objectFit: "contain", borderRadius: 3, background: "#fff", padding: 2 }} />
+                <span>{evt.shortName}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="sidebar-footer" style={{ padding: "1rem", borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div className="host-session-active" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span className="badge badge-green" style={{ background: "rgba(63,185,80,0.15)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.2)", width: "100%", justifyContent: "center" }}>
               <span className="live-dot" style={{ width: 5, height: 5 }} /> Host Session Active
             </span>

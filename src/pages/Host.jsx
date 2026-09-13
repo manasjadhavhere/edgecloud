@@ -263,12 +263,12 @@ export default function Host() {
       <BottomRightWaves />
 
       {/* ── Sidebar ────────────────────────────────────────── */}
-      <aside className="admin-sidebar glossy-dark">
-        <div style={{ padding: "1.5rem 1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "center" }}>
-          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 64, width: "auto", objectFit: "contain" }} />
+      <aside className="admin-sidebar">
+        <div className="sidebar-header" style={{ padding: "1.25rem 1rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "center", background: "#fff" }}>
+          <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 48, width: "auto", objectFit: "contain" }} className="sidebar-logo-img" />
         </div>
 
-        <div style={{ padding: "0.75rem", flex: 1 }}>
+        <div className="sidebar-events-list" style={{ padding: "0.75rem", flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           {event && (
             <div style={{ padding: "0.75rem 1rem", background: "rgba(255,255,255,0.05)", borderRadius: "var(--radius-md)", border: "1px solid rgba(255,255,255,0.1)", marginBottom: "1rem" }}>
               <img src={event.logo} alt={event.shortName} style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "0.4rem", background: "#fff", padding: 2, borderRadius: 2 }} />
@@ -301,7 +301,7 @@ export default function Host() {
           )}
         </div>
 
-        <div style={{ padding: "1rem", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <div className="sidebar-footer" style={{ padding: "1rem", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <button className="nav-item" onClick={() => navigate("/select-event")}>
             <ChevronLeft size={15} /> Change Event
           </button>

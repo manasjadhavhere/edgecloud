@@ -750,11 +750,44 @@ textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
     border-right: none;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column; /* Stack instead of row */
+    padding: 0;
   }
 
-  /* When the sidebar is glossy dark, adjust the border color */
   .admin-sidebar.glossy-dark {
     border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* Compact header layout */
+  .sidebar-header {
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    padding: 1rem !important;
+  }
+
+  .sidebar-logo-img {
+    height: 48px !important;
+  }
+  
+  .sidebar-events-list {
+    display: none !important; /* Hide redundant event lists on mobile */
+  }
+
+  .sidebar-content {
+    padding: 0.5rem 1rem !important;
+  }
+  
+  .sidebar-footer {
+    border-top: 1px solid rgba(255,255,255,0.05) !important;
+    padding: 0.75rem 1rem !important;
+    display: flex;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between;
+  }
+
+  .host-session-active {
+    display: none !important; /* Hide redundant badge */
   }
   
   .admin-main {
@@ -765,7 +798,7 @@ textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
   .admin-topbar {
     padding: 0 1rem;
     height: auto;
-    min-height: 56px;
+    min-height: 48px;
     flex-wrap: wrap;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;

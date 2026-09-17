@@ -1,6 +1,6 @@
-// src/components/WordCloudViz.jsx
 import { useEffect, useRef, useCallback } from "react";
 import { getMaskCanvas } from "../utils/masks";
+import iconicBrandWords from "../data/iconicBrandWords.json";
 
 const THEME_COLORS = {
   // Golden & black — perfect contrast for the red trophy
@@ -84,11 +84,20 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
       // Build word list with density fill so it reaches borders
       let processedWords = [...words];
+      
+      // If responses are sparse, seed the cloud with predefined iconic words
+      if (processedWords.length > 0 && processedWords.length < 30) {
+        const baseValue = processedWords[0].value;
+        iconicBrandWords.forEach(word => {
+          processedWords.push({ text: word, value: baseValue * 0.4 });
+        });
+      }
+
       if (fillShape && processedWords.length > 0) {
         const fillerNeeded = 400 - processedWords.length; // More filler for dense look
         for (let i = 0; i < fillerNeeded; i++) {
-          const si = Math.floor(Math.random() * words.length);
-          processedWords.push({ text: words[si].text, value: words[si].value * 0.08 });
+          const si = Math.floor(Math.random() * processedWords.length);
+          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.08 });
         }
       }
 
@@ -161,6 +170,15 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     }
 
     let processedWords = [...words];
+    
+    // If responses are sparse, seed the cloud with predefined iconic words
+    if (processedWords.length > 0 && processedWords.length < 30) {
+      const baseValue = processedWords[0].value;
+      iconicBrandWords.forEach(word => {
+        processedWords.push({ text: word, value: baseValue * 0.4 });
+      });
+    }
+
     if (fillShape && processedWords.length < 350 && processedWords.length > 0) {
       const fillerNeeded = 350 - processedWords.length;
       for (let i = 0; i < fillerNeeded; i++) {

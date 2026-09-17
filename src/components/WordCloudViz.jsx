@@ -43,8 +43,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
     const w = container.offsetWidth  || 1000;
     const h = container.offsetHeight || 600;
-    canvas.width  = w;
-    canvas.height = h;
+    // Only set width/height if they changed to prevent instant canvas clearing (blinking)
+    if (canvas.width !== w) canvas.width = w;
+    if (canvas.height !== h) canvas.height = h;
+    
     if (forwardedRef) forwardedRef.current = canvas;
 
     const ctx = canvas.getContext("2d");
@@ -81,6 +83,19 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       const off    = document.createElement("canvas");
       off.width    = offDim;
       off.height   = offDim;
+      const offCtx = off.getContext("2d");
+
+      // Occupied mask: paint white then punch out a slightly smaller circle.
+      // This forces the word cloud algorithm to stay strictly inside the padding,
+      // so no words touch the edge and get abruptly cut by the clip later.
+      offCtx.fillStyle = "#fff";
+      offCtx.fillRect(0, 0, offDim, offDim);
+      offCtx.globalCompositeOperation = "destination-out";
+      offCtx.beginPath();
+      const padding = Math.max(4, offDim * 0.05); // 5% padding
+      offCtx.arc(offDim / 2, offDim / 2, (offDim / 2) - padding, 0, Math.PI * 2);
+      offCtx.fill();
+      offCtx.globalCompositeOperation = "source-over";
 
       // Build word list with density fill so it reaches borders
       let processedWords = [...words];
@@ -125,7 +140,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           },
           rotateRatio:     0,
           backgroundColor: "transparent",
-          clearCanvas:     true,
+          clearCanvas:     false, // Don't clear our mask!
           drawOutOfBound:  false,
           shrinkToFit:     true,
           minSize:         minFont,

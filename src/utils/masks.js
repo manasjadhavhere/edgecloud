@@ -1,35 +1,15 @@
 // src/utils/masks.js
 /**
  * Generates precise SVG shape masks for word cloud silhouettes.
- * Crown → Iconic Brands | Cloud → Best Tech Brands
+ * Circle → Iconic Brands | Cloud → Best Tech Brands
  */
 
-// Crown SVG — a precise 5-point crown modeled after the reference image
-const CROWN_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -50 1000 600" width="1000" height="600" preserveAspectRatio="none">
-  <!-- Precision drawn crown base with bezier curves for graceful stems -->
-  <path d="
-    M 130 470
-    Q 400 490 670 470
-    C 720 450, 750 350, 750 280
-    C 730 320, 680 330, 630 330
-    C 620 280, 610 200, 590 150
-    C 560 250, 520 280, 460 280
-    C 450 200, 420 120, 400 80
-    C 380 120, 350 200, 340 280
-    C 280 280, 240 250, 210 150
-    C 190 200, 180 280, 170 330
-    C 120 330, 70 320, 50 280
-    C 50 350, 80 450, 130 470
-    Z
-  " fill="#000" />
-  
-  <!-- Distinct circular bulbs positioned perfectly at the tips -->
-  <circle cx="400" cy="65" r="45" fill="#000" />    <!-- Center tip -->
-  <circle cx="210" cy="140" r="35" fill="#000" />   <!-- Left-middle tip -->
-  <circle cx="590" cy="140" r="35" fill="#000" />   <!-- Right-middle tip -->
-  <circle cx="50" cy="270" r="25" fill="#000" />    <!-- Far-left tip -->
-  <circle cx="750" cy="270" r="25" fill="#000" />   <!-- Far-right tip -->
+// Circle SVG — matches the inner golden circle of the trophy
+// The word cloud fills this circle, then gets composited onto the trophy image
+const CIRCLE_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" preserveAspectRatio="none">
+  <!-- Perfect circle centered in the canvas — matches trophy inner circle -->
+  <circle cx="500" cy="285" r="265" fill="#000" />
 </svg>
 `;
 
@@ -84,8 +64,16 @@ function svgToMaskCanvas(svgString, width, height) {
 }
 
 export async function getMaskCanvas(theme, width, height) {
-  if (theme === "iconic") return svgToMaskCanvas(CROWN_SVG, width, height);
-  if (theme === "tech")   return svgToMaskCanvas(CLOUD_SVG,  width, height);
+  if (theme === "iconic")   return svgToMaskCanvas(CIRCLE_SVG,   width, height);
+  if (theme === "tech")     return svgToMaskCanvas(CLOUD_SVG,    width, height);
   if (theme === "consumer") return svgToMaskCanvas(CONSUMER_SVG, width, height);
   return null;
+}
+
+/**
+ * For iconic theme: returns a circle mask canvas for the inner trophy circle.
+ * Used by WordCloudViz to cut the word cloud into the circular shape.
+ */
+export async function getCircleMaskCanvas(width, height) {
+  return svgToMaskCanvas(CIRCLE_SVG, width, height);
 }

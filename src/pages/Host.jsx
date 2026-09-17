@@ -209,7 +209,8 @@ export default function Host() {
   const [gameId, setGameId] = useState(location.state?.gameId || null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
-  const textareaRef = useRef(null);
+  const textareaRef    = useRef(null);
+  const cloudCanvasRef  = useRef(null); // captures the live word cloud canvas
   const { game, responses } = useGame(gameId);
   const joinUrl = `${window.location.origin}/join/${gameId}`;
 
@@ -238,7 +239,22 @@ export default function Host() {
   async function handleEnd() {
     if (!gameId) return;
 
-    const updates = { status: "ended", endedAt: Date.now() };
+    // Capture the current word cloud canvas as a base64 image before ending
+    let finalCloudImage = null;
+    try {
+      const canvas = cloudCanvasRef.current;
+      if (canvas && canvas.width > 0 && canvas.height > 0) {
+        finalCloudImage = canvas.toDataURL("image/png");
+      }
+    } catch (e) {
+      console.warn("Could not capture word cloud canvas:", e);
+    }
+
+    const updates = {
+      status:   "ended",
+      endedAt:  Date.now(),
+      ...(finalCloudImage ? { finalCloudImage } : {}),
+    };
 
     await update(ref(db, `games/${gameId}`), updates);
     await set(ref(db, "activeGame"), null);
@@ -408,7 +424,7 @@ export default function Host() {
                   <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Live Word Cloud</p>
                   <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", minHeight: 320, overflow: "hidden" }}>
                     {responses.length > 0 ? (
-                      <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} />
+                      <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} forwardedRef={cloudCanvasRef} />
                     ) : (
                       <div style={{ display: "flex", height: 320, alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "0.75rem", color: "var(--text-muted)" }}>
                         <div className="spinner" />

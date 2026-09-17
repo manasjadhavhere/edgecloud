@@ -3,21 +3,30 @@ import { useEffect, useRef, useCallback } from "react";
 import { getMaskCanvas } from "../utils/masks";
 
 const THEME_COLORS = {
-  iconic: ["#8B1818", "#C5A059", "#A0522D", "#8B6914", "#5A0F0F", "#990000", "#6B4226", "#B8860B", "#C5832A", "#7B3F00"],
-  tech:   ["#003D73", "#00529B", "#0277BD", "#0288D1", "#006064", "#00838F", "#1565C0", "#01579B", "#0097A7", "#004D87"],
+  // Golden & black — perfect contrast for the red trophy
+  iconic:   ["#FFD700", "#F5C518", "#DAA520", "#FFC200", "#FFE566", "#B8860B", "#FFF3B0", "#C5A000", "#FFDF00", "#E8B800"],
+  tech:     ["#003D73", "#00529B", "#0277BD", "#0288D1", "#006064", "#00838F", "#1565C0", "#01579B", "#0097A7", "#004D87"],
   consumer: ["#0B132C", "#D4AF37", "#131A2D", "#C5A059", "#1A2639", "#B8860B", "#8B1818", "#0A192F", "#F9E596", "#040B18"],
-  default:["#8B1818", "#00529B", "#16A34A", "#B45309", "#4338CA", "#BE123C", "#0F766E", "#0369A1"],
+  default:  ["#8B1818", "#00529B", "#16A34A", "#B45309", "#4338CA", "#BE123C", "#0F766E", "#0369A1"],
 };
 
+/** Load an image and return HTMLImageElement */
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 /**
- * Renders the wordcloud2 library onto a canvas using shape masking.
- * 
- * Strategy for shape masking:
- *   wordcloud2 treats non-transparent canvas pixels as "occupied space".
- *   So we:
- *   1. Paint the whole canvas with a fully opaque black fill (all occupied)
- *   2. Use destination-out to "punch out" the mask shape (making those pixels free)
- *   3. wordcloud2 then places words only in the transparent (free) region = inside the shape
+ * For the iconic theme, the word cloud is rendered into the inner circle of
+ * the trophy image. The trophy PNG is composited on a dark background, and
+ * the word cloud (golden palette) is drawn clipped to the inner golden circle.
+ *
+ * For other themes the existing SVG mask strategy is used unchanged.
  */
 export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false }) {
   const canvasRef    = useRef(null);
@@ -40,17 +49,126 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
     const ctx = canvas.getContext("2d");
 
-    // Get mask canvas (black shape on transparent background)
+    // ── ICONIC THEME: Trophy image + circular word cloud ──────────────────────
+    if (theme === "iconic") {
+      // Load trophy image
+      let trophyImg = null;
+      try {
+        trophyImg = await loadImage("/events_shape/best_iconic_brands.png");
+      } catch (e) {
+        console.warn("Trophy image failed to load", e);
+      }
+
+      // The trophy PNG is 1456x816 (16:9 approx). Compute object-fit:contain layout.
+      const trophyAspect = 1456 / 816;
+      const canvasAspect = w / h;
+      let tW, tH, tX, tY;
+      if (canvasAspect > trophyAspect) {
+        tH = h; tW = h * trophyAspect; tX = (w - tW) / 2; tY = 0;
+      } else {
+        tW = w; tH = w / trophyAspect; tX = 0; tY = (h - tH) / 2;
+      }
+
+      // Inner circle centre & radius — measured from the actual PNG proportions.
+      // Centre is at ~50% x, ~34.5% y; radius ~21% of width.
+      const circleCX = tX + tW * 0.500;
+      const circleCY = tY + tH * 0.345;
+      const circleR  = tW * 0.208;
+
+      // --- Offscreen canvas: render word cloud clipped to circle ---
+      const offDim = Math.round(circleR * 2) * 2; // 2× for sharpness
+      const off    = document.createElement("canvas");
+      off.width    = offDim;
+      off.height   = offDim;
+      const offCtx = off.getContext("2d");
+
+      // Occupied mask: paint white then punch out circle
+      offCtx.fillStyle = "#fff";
+      offCtx.fillRect(0, 0, offDim, offDim);
+      offCtx.globalCompositeOperation = "destination-out";
+      offCtx.beginPath();
+      offCtx.arc(offDim / 2, offDim / 2, offDim / 2, 0, Math.PI * 2);
+      offCtx.fill();
+      offCtx.globalCompositeOperation = "source-over";
+
+      // Build word list with density fill
+      let processedWords = [...words];
+      if (fillShape && processedWords.length < 350 && processedWords.length > 0) {
+        const fillerNeeded = 350 - processedWords.length;
+        for (let i = 0; i < fillerNeeded; i++) {
+          const si = Math.floor(Math.random() * processedWords.length);
+          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.1 });
+        }
+      }
+
+      const maxVal  = processedWords[0]?.value || 1;
+      const minFont = 4;
+      const maxFont = Math.min(Math.round(offDim / 4), 120);
+      const list    = processedWords.map(({ text, value }) => [
+        text,
+        Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)),
+      ]);
+
+      await new Promise((resolve) => {
+        WordCloud(off, {
+          list,
+          gridSize:        Math.max(2, Math.round(2 * offDim / 800)),
+          weightFactor:    1,
+          fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+          fontWeight:      "700",
+          color:           (_w, _wt, _fs, _d, theta) => {
+            const idx = Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length;
+            return colors[idx];
+          },
+          rotateRatio:     0,
+          backgroundColor: "transparent",
+          clearCanvas:     false,
+          drawOutOfBound:  false,
+          shrinkToFit:     true,
+          minSize:         3,
+          shuffle:         true,
+          shape:           "circle",
+        });
+        setTimeout(resolve, 500);
+      });
+
+      // --- Composite onto main canvas ---
+      ctx.clearRect(0, 0, w, h);
+
+      // Dark red background matching the event mood
+      ctx.fillStyle = "#1a0000";
+      ctx.fillRect(0, 0, w, h);
+
+      // Trophy image (object-fit:contain)
+      if (trophyImg) ctx.drawImage(trophyImg, tX, tY, tW, tH);
+
+      // Clip to inner circle and paint the word cloud
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(circleCX, circleCY, circleR - 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(off, circleCX - circleR, circleCY - circleR, circleR * 2, circleR * 2);
+      ctx.restore();
+
+      // Thin golden ring for polish
+      ctx.save();
+      ctx.strokeStyle = "#C5A059";
+      ctx.lineWidth   = Math.max(2, circleR * 0.022);
+      ctx.beginPath();
+      ctx.arc(circleCX, circleCY, circleR - 1, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      return;
+    }
+
+    // ── OTHER THEMES: Original mask strategy ──────────────────────────────────
     const maskCanvas = await getMaskCanvas(theme, w, h);
 
     if (maskCanvas) {
-      // Step 1: Fill everything with opaque white — means "all occupied" for wordcloud2
-      // Since the wrapper has a white background, this will be invisible to the user.
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, w, h);
-
-      // Step 2: Punch out the shape area using the mask (black pixels in mask = free zone)
       ctx.globalCompositeOperation = "destination-out";
       ctx.drawImage(maskCanvas, 0, 0, w, h);
       ctx.globalCompositeOperation = "source-over";
@@ -58,37 +176,26 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       ctx.clearRect(0, 0, w, h);
     }
 
-    // Force extreme density: if there are fewer than 250 words, duplicate smaller words as filler
     let processedWords = [...words];
-    const MIN_DENSITY = 350;
-    
-    if (fillShape && processedWords.length < MIN_DENSITY && processedWords.length > 0) {
-      const fillerNeeded = MIN_DENSITY - processedWords.length;
+    if (fillShape && processedWords.length < 350 && processedWords.length > 0) {
+      const fillerNeeded = 350 - processedWords.length;
       for (let i = 0; i < fillerNeeded; i++) {
-        // Pick words to duplicate (favor lower-middle frequency words for background fill)
-        const sourceIdx = Math.floor(Math.random() * processedWords.length);
-        processedWords.push({
-          text: processedWords[sourceIdx].text,
-          value: processedWords[sourceIdx].value * 0.1 // very small weight for filler
-        });
+        const si = Math.floor(Math.random() * processedWords.length);
+        processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.1 });
       }
     }
 
-    const wordCount = processedWords.length;
-    const maxVal    = processedWords[0]?.value || 1;
-    
-    // Compute font scales for anchor words vs filler words
+    const maxVal  = processedWords[0]?.value || 1;
     const minFont = 6;
-    const maxFont = Math.min(Math.round(w / 3.5), 180); // massive anchors
-
-    const list = processedWords.map(({ text, value }) => [
+    const maxFont = Math.min(Math.round(w / 3.5), 180);
+    const list    = processedWords.map(({ text, value }) => [
       text,
-      Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)), // steep power curve for huge anchors & tiny fillers
+      Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)),
     ]);
 
     WordCloud(canvas, {
       list,
-      gridSize:        Math.max(2, Math.round(2 * w / 800)), // smaller grid = denser packing
+      gridSize:        Math.max(2, Math.round(2 * w / 800)),
       weightFactor:    1,
       fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
       fontWeight:      "700",
@@ -96,12 +203,12 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         const idx = Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length;
         return colors[idx];
       },
-      rotateRatio:     0,           // all horizontal — professional B2B look
+      rotateRatio:     0,
       backgroundColor: "transparent",
-      clearCanvas:     false,       // IMPORTANT: keep the mask we painted
+      clearCanvas:     false,
       drawOutOfBound:  false,
       shrinkToFit:     true,
-      minSize:         4,           // allow very small words to fill gaps
+      minSize:         4,
       shuffle:         true,
       shape:           "square",
     });
@@ -111,13 +218,24 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     drawCloud();
   }, [drawCloud]);
 
+  const isIconic = theme === "iconic";
+
   return (
     <div
       ref={containerRef}
       className="wordcloud-wrapper"
-      style={{ position: "relative", width: "100%", aspectRatio: "1000 / 600", background: "#fff", margin: "0 auto" }}
+      style={{
+        position:     "relative",
+        width:        "100%",
+        aspectRatio:  isIconic ? "16 / 9" : "1000 / 600",
+        background:   isIconic ? "#1a0000" : "#fff",
+        margin:       "0 auto",
+        borderRadius: isIconic ? "8px" : undefined,
+        overflow:     "hidden",
+      }}
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
     </div>
   );
 }
+

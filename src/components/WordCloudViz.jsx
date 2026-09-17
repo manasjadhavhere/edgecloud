@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { getMaskCanvas } from "../utils/masks";
 import iconicBrandWords from "../data/iconicBrandWords.json";
+import { Maximize, Minimize } from "lucide-react";
 
 const THEME_COLORS = {
   // Golden & black — perfect contrast for the red trophy
@@ -31,6 +32,21 @@ function loadImage(src) {
 export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => console.error(err));
+    } else {
+      document.exitFullscreen().catch(err => console.error(err));
+    }
+  };
 
   const drawCloud = useCallback(async () => {
     if (!words || words.length === 0) return;
@@ -72,9 +88,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       }
 
       // Inner circle centre & radius — carefully measured from the actual PNG.
-      // Centre is exactly 50% horizontally. Vertically it's slightly above center (~34.5%).
+      // The visual circle is slightly left of perfect center, so we use 49.2%.
+      // Vertically it's slightly above center (~34.4%).
       // The radius of the inner red circle inside the gold ring is ~8.6% of the image width.
-      const circleCX = tX + tW * 0.500;
+      const circleCX = tX + tW * 0.492;
       const circleCY = tY + tH * 0.344;
       const circleR  = tW * 0.086;
 
@@ -255,14 +272,42 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       style={{
         position:     "relative",
         width:        "100%",
-        aspectRatio:  isIconic ? "16 / 9" : "1000 / 600",
+        aspectRatio:  isIconic && !isFullscreen ? "16 / 9" : (isFullscreen ? undefined : "1000 / 600"),
+        height:       isFullscreen ? "100vh" : undefined,
         background:   isIconic ? "#1a0000" : "#fff",
         margin:       "0 auto",
-        borderRadius: isIconic ? "8px" : undefined,
+        borderRadius: isIconic && !isFullscreen ? "8px" : undefined,
         overflow:     "hidden",
+        display:      "flex",
+        alignItems:   "center",
+        justifyContent: "center",
       }}
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      
+      <button 
+        onClick={toggleFullscreen}
+        style={{
+          position: "absolute",
+          top: "1rem",
+          right: "1rem",
+          background: "rgba(0, 0, 0, 0.5)",
+          color: "#fff",
+          border: "none",
+          borderRadius: "4px",
+          padding: "8px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "background 0.2s"
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.8)"}
+        onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
+        title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+      >
+        {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+      </button>
     </div>
   );
 }

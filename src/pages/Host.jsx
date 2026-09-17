@@ -424,7 +424,7 @@ export default function Host() {
                   <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Live Word Cloud</p>
                   <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", minHeight: 320, overflow: "hidden" }}>
                     {responses.length > 0 ? (
-                      <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} forwardedRef={cloudCanvasRef} />
+                      <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} forwardedRef={cloudCanvasRef} onStop={handleEnd} />
                     ) : (
                       <div style={{ display: "flex", height: 320, alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "0.75rem", color: "var(--text-muted)" }}>
                         <div className="spinner" />

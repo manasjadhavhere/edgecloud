@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { getMaskCanvas } from "../utils/masks";
 import iconicBrandWords from "../data/iconicBrandWords.json";
-import { Maximize, Minimize } from "lucide-react";
+import { Maximize, Minimize, StopCircle } from "lucide-react";
 
 const THEME_COLORS = {
   // Golden & black — perfect contrast for the red trophy
@@ -29,7 +29,7 @@ function loadImage(src) {
  *
  * For other themes the existing SVG mask strategy is used unchanged.
  */
-export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false }) {
+export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false, onStop = null }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -285,29 +285,57 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
       
-      <button 
-        onClick={toggleFullscreen}
-        style={{
-          position: "absolute",
-          top: "1rem",
-          right: "1rem",
-          background: "rgba(0, 0, 0, 0.5)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "4px",
-          padding: "8px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "background 0.2s"
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.8)"}
-        onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
-        title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-      >
-        {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-      </button>
+      <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
+        {isFullscreen && onStop && (
+          <button 
+            onClick={() => {
+              if (document.fullscreenElement) {
+                document.exitFullscreen().catch(err => console.error(err));
+              }
+              onStop();
+            }}
+            style={{
+              background: "#DC2626",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              padding: "8px 16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "#B91C1C"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "#DC2626"}
+          >
+            <StopCircle size={16} /> Stop Game
+          </button>
+        )}
+
+        <button 
+          onClick={toggleFullscreen}
+          style={{
+            background: "rgba(0, 0, 0, 0.5)",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            padding: "8px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "background 0.2s"
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.8)"}
+          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
+          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        >
+          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+        </button>
+      </div>
     </div>
   );
 }

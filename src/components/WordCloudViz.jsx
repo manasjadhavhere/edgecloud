@@ -257,7 +257,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       shuffle:         true,
       shape:           "square",
     });
-  }, [JSON.stringify(words), theme, forwardedRef]);
+  }, [JSON.stringify(words), theme, forwardedRef, isFullscreen]);
 
   useEffect(() => {
     drawCloud();

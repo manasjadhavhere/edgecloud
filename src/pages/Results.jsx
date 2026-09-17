@@ -182,13 +182,7 @@ export default function Results() {
                   <p style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem", textAlign: "center", color: "var(--text-muted)", marginBottom: "0.5rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
                     {event?.name || "EdgeCloud"} · Game #{gameId}
                   </p>
-                  {game?.finalCloudImage ? (
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                      <img src={game.finalCloudImage} alt="Word Cloud" style={{ width: "100%", maxWidth: "1000px", height: "auto", objectFit: "contain", borderRadius: "var(--radius-sm)" }} />
-                    </div>
-                  ) : (
-                    <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} fillShape={true} />
-                  )}
+                  <WordCloudViz words={frequencies} forwardedRef={canvasRef} theme={game?.eventId} fillShape={true} />
                 </div>
               </div>
 

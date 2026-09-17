@@ -150,6 +150,16 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         setTimeout(resolve, 500);
       });
 
+      // Erase the white mask from the offscreen canvas so it's not visible
+      const imgData = offCtx.getImageData(0, 0, offDim, offDim);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] === 255 && data[i+1] === 255 && data[i+2] === 255) {
+          data[i+3] = 0; // Set alpha to transparent
+        }
+      }
+      offCtx.putImageData(imgData, 0, 0);
+
       // --- Composite onto main canvas ---
       ctx.clearRect(0, 0, w, h);
 
@@ -162,13 +172,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         ctx.drawImage(trophyImg, tX, tY, tW, tH);
       }
 
-      // Clip to inner circle and paint the word cloud
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(circleCX, circleCY, circleR - 1, 0, Math.PI * 2);
-      ctx.clip();
+      // Draw word cloud (mask is erased, so no clip needed, words stay inside naturally)
       ctx.drawImage(off, circleCX - circleR, circleCY - circleR, circleR * 2, circleR * 2);
-      ctx.restore();
 
       return;
     }

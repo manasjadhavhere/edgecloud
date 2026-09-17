@@ -32,6 +32,7 @@ function loadImage(src) {
 export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false, onStop = null }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
+  const htmlCloudRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -95,39 +96,38 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       const circleCY = tY + tH * 0.344;
       const circleR  = tW * 0.086;
 
-      // --- Offscreen canvas: render word cloud ---
-      const offDim = Math.round(circleR * 2) * 2; // 2× for sharpness
-      const off    = document.createElement("canvas");
-      off.width    = offDim;
-      off.height   = offDim;
-      const offCtx = off.getContext("2d");
+      const div = htmlCloudRef.current;
+      let size = 100;
+      if (div) {
+        const padding = 1;
+        size = (circleR - padding) * 2;
+        div.style.left = `${circleCX - circleR + padding}px`;
+        div.style.top = `${circleCY - circleR + padding}px`;
+        div.style.width = `${size}px`;
+        div.style.height = `${size}px`;
+        div.innerHTML = ""; // Clear old spans
+      }
 
-      // Occupied mask: paint white then punch out a slightly smaller circle.
-      // This forces the word cloud algorithm to stay strictly inside the padding,
-      // so no words touch the edge and get abruptly cut by the clip later.
-      offCtx.fillStyle = "#fff";
-      offCtx.fillRect(0, 0, offDim, offDim);
-      offCtx.globalCompositeOperation = "destination-out";
-      offCtx.beginPath();
-      const padding = 1; // Minimal padding so words fill right up to the golden circle
-      offCtx.arc(offDim / 2, offDim / 2, (offDim / 2) - padding, 0, Math.PI * 2);
-      offCtx.fill();
-      offCtx.globalCompositeOperation = "source-over";
+      // --- Composite onto main canvas ---
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#1a0000";
+      ctx.fillRect(0, 0, w, h);
+      if (trophyImg) {
+        ctx.drawImage(trophyImg, tX, tY, tW, tH);
+      }
 
       // Build word list with density fill so it reaches borders
       let processedWords = [...words];
       
       // Only fill if game is stopped (fillShape is true)
       if (fillShape && processedWords.length > 0) {
-        // If responses are sparse, seed the cloud with predefined iconic words
         if (processedWords.length < 30) {
           const baseValue = processedWords[0].value;
           iconicBrandWords.forEach(word => {
             processedWords.push({ text: word, value: baseValue * 0.4 });
           });
         }
-
-        const fillerNeeded = 400 - processedWords.length; // More filler for dense look
+        const fillerNeeded = 400 - processedWords.length;
         if (fillerNeeded > 0) {
           for (let i = 0; i < fillerNeeded; i++) {
             const si = Math.floor(Math.random() * processedWords.length);
@@ -136,61 +136,55 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         }
       }
 
-      const maxVal  = processedWords[0]?.value || 1;
-      const minFont = Math.max(4, Math.round(offDim / 60));
-      const maxFont = Math.min(Math.round(offDim / 3.5), 160);
-      const list    = processedWords.map(({ text, value }) => [
-        text,
-        Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
-      ]);
+      if (div && processedWords.length > 0) {
+        const maxVal  = processedWords[0]?.value || 1;
+        const minFont = Math.max(4, Math.round(size / 60));
+        const maxFont = Math.min(Math.round(size / 3.5), 160);
+        const list    = processedWords.map(({ text, value }) => [
+          text,
+          Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
+        ]);
 
-      await new Promise((resolve) => {
-        WordCloud(off, {
-          list,
-          gridSize:        Math.max(2, Math.round(offDim / 300)),
-          weightFactor:    1,
-          fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-          fontWeight:      "700",
-          color:           (_w, _wt, _fs, _d, theta) => {
-            const idx = Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length;
-            return colors[idx];
-          },
-          rotateRatio:     0,
-          backgroundColor: "transparent",
-          clearCanvas:     false, // Don't clear our mask!
-          drawOutOfBound:  false,
-          shrinkToFit:     true,
-          minSize:         minFont,
-          shuffle:         true,
-          shape:           "circle",
+        await new Promise((resolve) => {
+          let finished = false;
+          const onStopRender = () => {
+            if (finished) return;
+            finished = true;
+            resolve();
+          };
+          div.addEventListener("wordcloudstop", onStopRender, { once: true });
+          
+          WordCloud(div, {
+            list,
+            gridSize:        Math.max(2, Math.round(size / 300)),
+            weightFactor:    1,
+            fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+            fontWeight:      "700",
+            color:           (_w, _wt, _fs, _d, theta) => {
+              const idx = Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length;
+              return colors[idx];
+            },
+            rotateRatio:     0,
+            backgroundColor: "transparent",
+            drawOutOfBound:  false,
+            shrinkToFit:     true,
+            minSize:         minFont,
+            shuffle:         true,
+            shape:           "circle",
+          });
+          
+          setTimeout(onStopRender, 2000); // Safety fallback
         });
-        setTimeout(resolve, 500);
-      });
 
-      // Erase the white mask from the offscreen canvas so it's not visible
-      const imgData = offCtx.getImageData(0, 0, offDim, offDim);
-      const data = imgData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] === 255 && data[i+1] === 255 && data[i+2] === 255) {
-          data[i+3] = 0; // Set alpha to transparent
-        }
+        // Apply slide animations based on position
+        const children = Array.from(div.children);
+        const centerX = size / 2;
+        children.forEach((span, i) => {
+          const spanCenter = span.offsetLeft + span.offsetWidth / 2;
+          span.classList.add(spanCenter < centerX ? "word-slide-left" : "word-slide-right");
+          span.style.animationDelay = `${i * 30}ms`; // staggered effect
+        });
       }
-      offCtx.putImageData(imgData, 0, 0);
-
-      // --- Composite onto main canvas ---
-      ctx.clearRect(0, 0, w, h);
-
-      // Dark red background matching the event mood
-      ctx.fillStyle = "#1a0000";
-      ctx.fillRect(0, 0, w, h);
-
-      // Trophy image (object-fit:contain)
-      if (trophyImg) {
-        ctx.drawImage(trophyImg, tX, tY, tW, tH);
-      }
-
-      // Draw word cloud (mask is erased, so no clip needed, words stay inside naturally)
-      ctx.drawImage(off, circleCX - circleR, circleCY - circleR, circleR * 2, circleR * 2);
 
       return;
     }
@@ -283,7 +277,36 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         justifyContent: "center",
       }}
     >
+      <style>{`
+        @keyframes slideInLeftIconic {
+          from { opacity: 0; margin-left: -40px; }
+          to { opacity: 1; margin-left: 0; }
+        }
+        @keyframes slideInRightIconic {
+          from { opacity: 0; margin-left: 40px; }
+          to { opacity: 1; margin-left: 0; }
+        }
+        .word-slide-left {
+          animation: slideInLeftIconic 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+        }
+        .word-slide-right {
+          animation: slideInRightIconic 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+        }
+      `}</style>
+
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      
+      {isIconic && (
+        <div 
+          ref={htmlCloudRef}
+          style={{
+            position: "absolute",
+            pointerEvents: "none"
+          }}
+        />
+      )}
       
       <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
         {isFullscreen && onStop && (

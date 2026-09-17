@@ -70,11 +70,11 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       }
 
       // Inner circle centre & radius — carefully measured from the actual PNG.
-      // Centre is exactly 50% horizontally. Vertically it's slightly above center (~35.5%).
-      // The radius of the inner red circle inside the gold ring is ~13.5% of the image width.
+      // Centre is exactly 50% horizontally. Vertically it's slightly above center (~34.5%).
+      // The radius of the inner red circle inside the gold ring is ~8.6% of the image width.
       const circleCX = tX + tW * 0.500;
-      const circleCY = tY + tH * 0.355;
-      const circleR  = tW * 0.135;
+      const circleCY = tY + tH * 0.344;
+      const circleR  = tW * 0.086;
 
       // --- Offscreen canvas: render word cloud ---
       const offDim = Math.round(circleR * 2) * 2; // 2× for sharpness
@@ -85,19 +85,22 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       // Build word list with density fill so it reaches borders
       let processedWords = [...words];
       
-      // If responses are sparse, seed the cloud with predefined iconic words
-      if (processedWords.length > 0 && processedWords.length < 30) {
-        const baseValue = processedWords[0].value;
-        iconicBrandWords.forEach(word => {
-          processedWords.push({ text: word, value: baseValue * 0.4 });
-        });
-      }
-
+      // Only fill if game is stopped (fillShape is true)
       if (fillShape && processedWords.length > 0) {
+        // If responses are sparse, seed the cloud with predefined iconic words
+        if (processedWords.length < 30) {
+          const baseValue = processedWords[0].value;
+          iconicBrandWords.forEach(word => {
+            processedWords.push({ text: word, value: baseValue * 0.4 });
+          });
+        }
+
         const fillerNeeded = 400 - processedWords.length; // More filler for dense look
-        for (let i = 0; i < fillerNeeded; i++) {
-          const si = Math.floor(Math.random() * processedWords.length);
-          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.08 });
+        if (fillerNeeded > 0) {
+          for (let i = 0; i < fillerNeeded; i++) {
+            const si = Math.floor(Math.random() * processedWords.length);
+            processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.08 });
+          }
         }
       }
 
@@ -171,19 +174,22 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
     let processedWords = [...words];
     
-    // If responses are sparse, seed the cloud with predefined iconic words
-    if (processedWords.length > 0 && processedWords.length < 30) {
-      const baseValue = processedWords[0].value;
-      iconicBrandWords.forEach(word => {
-        processedWords.push({ text: word, value: baseValue * 0.4 });
-      });
-    }
+    // Only fill if game is stopped (fillShape is true)
+    if (fillShape && processedWords.length > 0) {
+      // If responses are sparse, seed the cloud with predefined iconic words
+      if (processedWords.length < 30) {
+        const baseValue = processedWords[0].value;
+        iconicBrandWords.forEach(word => {
+          processedWords.push({ text: word, value: baseValue * 0.4 });
+        });
+      }
 
-    if (fillShape && processedWords.length < 350 && processedWords.length > 0) {
       const fillerNeeded = 350 - processedWords.length;
-      for (let i = 0; i < fillerNeeded; i++) {
-        const si = Math.floor(Math.random() * processedWords.length);
-        processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.1 });
+      if (fillerNeeded > 0) {
+        for (let i = 0; i < fillerNeeded; i++) {
+          const si = Math.floor(Math.random() * processedWords.length);
+          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.1 });
+        }
       }
     }
 

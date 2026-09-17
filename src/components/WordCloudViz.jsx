@@ -32,8 +32,8 @@ function loadImage(src) {
 export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false, onStop = null }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
-  const htmlCloudRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const animRef      = useRef(null); // to track animation frame
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -96,25 +96,22 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       const circleCY = tY + tH * 0.344;
       const circleR  = tW * 0.086;
 
-      const div = htmlCloudRef.current;
-      let size = 100;
-      if (div) {
-        const padding = 1;
-        size = (circleR - padding) * 2;
-        div.style.left = `${circleCX - circleR + padding}px`;
-        div.style.top = `${circleCY - circleR + padding}px`;
-        div.style.width = `${size}px`;
-        div.style.height = `${size}px`;
-        div.innerHTML = ""; // Clear old spans
-      }
+      // --- Offscreen canvas: render word cloud ---
+      const offDim = Math.round(circleR * 2) * 2; // 2× for sharpness
+      const off    = document.createElement("canvas");
+      off.width    = offDim;
+      off.height   = offDim;
+      const offCtx = off.getContext("2d");
 
-      // --- Composite onto main canvas ---
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "#1a0000";
-      ctx.fillRect(0, 0, w, h);
-      if (trophyImg) {
-        ctx.drawImage(trophyImg, tX, tY, tW, tH);
-      }
+      // Occupied mask: paint white then punch out a slightly smaller circle.
+      offCtx.fillStyle = "#fff";
+      offCtx.fillRect(0, 0, offDim, offDim);
+      offCtx.globalCompositeOperation = "destination-out";
+      offCtx.beginPath();
+      const padding = 1; // Minimal padding so words fill right up to the golden circle
+      offCtx.arc(offDim / 2, offDim / 2, (offDim / 2) - padding, 0, Math.PI * 2);
+      offCtx.fill();
+      offCtx.globalCompositeOperation = "source-over";
 
       // Build word list with density fill so it reaches borders
       let processedWords = [...words];
@@ -136,10 +133,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         }
       }
 
-      if (div && processedWords.length > 0) {
+      if (processedWords.length > 0) {
         const maxVal  = processedWords[0]?.value || 1;
-        const minFont = Math.max(4, Math.round(size / 60));
-        const maxFont = Math.min(Math.round(size / 3.5), 160);
+        const minFont = Math.max(4, Math.round(offDim / 60));
+        const maxFont = Math.min(Math.round(offDim / 3.5), 160);
         const list    = processedWords.map(({ text, value }) => [
           text,
           Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
@@ -152,11 +149,11 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
             finished = true;
             resolve();
           };
-          div.addEventListener("wordcloudstop", onStopRender, { once: true });
-          
-          WordCloud(div, {
+          // wordcloud2.js doesn't always reliably fire wordcloudstop on custom grids, 
+          // but we use setTimeout as a fallback or just wait for it since wait=0 means synchronous execution usually.
+          WordCloud(off, {
             list,
-            gridSize:        Math.max(2, Math.round(size / 300)),
+            gridSize:        Math.max(2, Math.round(offDim / 300)),
             weightFactor:    1,
             fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
             fontWeight:      "700",
@@ -166,25 +163,82 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
             },
             rotateRatio:     0,
             backgroundColor: "transparent",
+            clearCanvas:     false, // Don't clear our mask!
             drawOutOfBound:  false,
             shrinkToFit:     true,
             minSize:         minFont,
             shuffle:         true,
             shape:           "circle",
           });
-          
-          setTimeout(onStopRender, 2000); // Safety fallback
+          // Usually WordCloud(canvas) is completely synchronous when wait is not specified.
+          // So we resolve on the next tick.
+          setTimeout(onStopRender, 50); 
         });
 
-        // Apply slide animations based on position
-        const children = Array.from(div.children);
-        const centerX = size / 2;
-        children.forEach((span, i) => {
-          const spanCenter = span.offsetLeft + span.offsetWidth / 2;
-          span.classList.add(spanCenter < centerX ? "word-slide-left" : "word-slide-right");
-          span.style.animationDelay = `${i * 30}ms`; // staggered effect
-        });
+        // Erase the white mask from the offscreen canvas so it's not visible
+        const imgData = offCtx.getImageData(0, 0, offDim, offDim);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i] === 255 && data[i+1] === 255 && data[i+2] === 255) {
+            data[i+3] = 0; // Set alpha to transparent
+          }
+        }
+        offCtx.putImageData(imgData, 0, 0);
       }
+
+      // ── Custom Canvas Animation ──
+      // Cancel any previous animation
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+
+      const startTime = performance.now();
+      const duration = 1000; // 1 second slide-in
+
+      const renderFrame = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (easeOutQuint)
+        const ease = 1 - Math.pow(1 - progress, 5);
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#1a0000";
+        ctx.fillRect(0, 0, w, h);
+        
+        if (trophyImg) {
+          ctx.drawImage(trophyImg, tX, tY, tW, tH);
+        }
+
+        if (processedWords.length > 0) {
+          const halfOff = offDim / 2;
+          const halfSize = circleR; // Size on main canvas
+          const slideDistance = 60; // Start 60px away
+          
+          ctx.save();
+          ctx.globalAlpha = ease;
+
+          // Draw left half (sliding from left)
+          const leftX = circleCX - circleR - (slideDistance * (1 - ease));
+          ctx.drawImage(off, 
+            0, 0, halfOff, offDim, // source
+            leftX, circleCY - circleR, halfSize, circleR * 2 // dest
+          );
+          
+          // Draw right half (sliding from right)
+          const rightX = circleCX + (slideDistance * (1 - ease));
+          ctx.drawImage(off, 
+            halfOff, 0, halfOff, offDim, // source
+            rightX, circleCY - circleR, halfSize, circleR * 2 // dest
+          );
+
+          ctx.restore();
+        }
+
+        if (progress < 1) {
+          animRef.current = requestAnimationFrame(renderFrame);
+        }
+      };
+
+      animRef.current = requestAnimationFrame(renderFrame);
 
       return;
     }
@@ -253,62 +307,39 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     });
   }, [JSON.stringify(words), theme, forwardedRef, isFullscreen]);
 
-  useEffect(() => {
-    drawCloud();
-  }, [drawCloud]);
+    useEffect(() => {
+      drawCloud();
+    }, [drawCloud]);
 
-  const isIconic = theme === "iconic";
+    useEffect(() => {
+      return () => {
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+      };
+    }, []);
 
-  return (
-    <div
-      ref={containerRef}
-      className="wordcloud-wrapper"
-      style={{
-        position:     "relative",
-        width:        "100%",
-        aspectRatio:  isIconic && !isFullscreen ? "16 / 9" : (isFullscreen ? undefined : "1000 / 600"),
-        height:       isFullscreen ? "100vh" : undefined,
-        background:   isIconic ? "#1a0000" : "#fff",
-        margin:       "0 auto",
-        borderRadius: isIconic && !isFullscreen ? "8px" : undefined,
-        overflow:     "hidden",
-        display:      "flex",
-        alignItems:   "center",
-        justifyContent: "center",
-      }}
-    >
-      <style>{`
-        @keyframes slideInLeftIconic {
-          from { opacity: 0; margin-left: -40px; }
-          to { opacity: 1; margin-left: 0; }
-        }
-        @keyframes slideInRightIconic {
-          from { opacity: 0; margin-left: 40px; }
-          to { opacity: 1; margin-left: 0; }
-        }
-        .word-slide-left {
-          animation: slideInLeftIconic 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          opacity: 0;
-        }
-        .word-slide-right {
-          animation: slideInRightIconic 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          opacity: 0;
-        }
-      `}</style>
+    const isIconic = theme === "iconic";
 
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
-      
-      {isIconic && (
-        <div 
-          ref={htmlCloudRef}
-          style={{
-            position: "absolute",
-            pointerEvents: "none"
-          }}
-        />
-      )}
-      
-      <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
+    return (
+      <div
+        ref={containerRef}
+        className="wordcloud-wrapper"
+        style={{
+          position:     "relative",
+          width:        "100%",
+          aspectRatio:  isIconic && !isFullscreen ? "16 / 9" : (isFullscreen ? undefined : "1000 / 600"),
+          height:       isFullscreen ? "100vh" : undefined,
+          background:   isIconic ? "#1a0000" : "#fff",
+          margin:       "0 auto",
+          borderRadius: isIconic && !isFullscreen ? "8px" : undefined,
+          overflow:     "hidden",
+          display:      "flex",
+          alignItems:   "center",
+          justifyContent: "center",
+        }}
+      >
+        <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+        
+        <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
         {isFullscreen && onStop && (
           <button 
             onClick={() => {

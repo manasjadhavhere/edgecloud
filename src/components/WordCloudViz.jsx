@@ -109,7 +109,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       offCtx.fillRect(0, 0, offDim, offDim);
       offCtx.globalCompositeOperation = "destination-out";
       offCtx.beginPath();
-      const padding = Math.max(4, offDim * 0.05); // 5% padding
+      const padding = 1; // Minimal padding so words fill right up to the golden circle
       offCtx.arc(offDim / 2, offDim / 2, (offDim / 2) - padding, 0, Math.PI * 2);
       offCtx.fill();
       offCtx.globalCompositeOperation = "source-over";

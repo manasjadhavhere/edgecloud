@@ -187,7 +187,39 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
       ]);
 
-      div.style.opacity = "0";
+      div.style.opacity = "1"; 
+
+      const centerX = size / 2;
+      let wordCount = 0;
+
+      // Animate words AS they are added to the DOM by WordCloud
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.tagName && node.tagName.toLowerCase() === 'span') {
+              const spanLeft = parseFloat(node.style.left || "0");
+              const isLeft = spanLeft < centerX;
+              
+              // User requirement: words come from the extreme left/right bounds
+              const startX = isLeft ? -1500 : 1500;
+              
+              node.animate([
+                { opacity: 0, transform: `translateX(${startX}px)` },
+                { opacity: 1, transform: 'translateX(0)' }
+              ], {
+                duration: 1200,
+                easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                fill: 'both',
+                delay: wordCount * 25 // Stagger the animation
+              });
+              
+              wordCount++;
+            }
+          });
+        });
+      });
+      
+      observer.observe(div, { childList: true });
 
       await new Promise((resolve) => {
         let finished = false;
@@ -208,42 +240,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           shuffle: true,
           shape: "circle",
         });
-        setTimeout(onStopRender, 600); // Fast fallback timeout
+        setTimeout(onStopRender, 2000); // 2s is enough to render 400 words without hanging forever
       });
 
-      div.style.opacity = "1";
-
-      try {
-        const children = Array.from(div.children);
-        
-        // Global camera pull-back effect on the entire container
-        div.animate([
-          { transform: 'scale(1.2)' },
-          { transform: 'scale(1)' }
-        ], {
-          duration: 3500,
-          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-          fill: 'both'
-        });
-
-        // Individual words pop in with 3D scale and fade
-        const totalStaggerTime = Math.min(1200, children.length * 35);
-        const staggerStep = children.length > 0 ? totalStaggerTime / children.length : 0;
-
-        children.forEach((span, i) => {
-          span.animate([
-            { opacity: 0, transform: 'scale(2.6)' },
-            { opacity: 1, transform: 'scale(1)' }
-          ], {
-            duration: 1000, 
-            easing: 'cubic-bezier(0.16, 1, 0.3, 1)', 
-            delay: i * staggerStep,
-            fill: 'both'
-          });
-        });
-      } catch (err) {
-        console.error("Animation error", err);
-      }
+      observer.disconnect();
     } else {
       if (htmlCloudRef.current) htmlCloudRef.current.innerHTML = "";
 

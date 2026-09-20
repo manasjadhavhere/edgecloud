@@ -181,22 +181,27 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       if (!div) return;
 
       // In Shape Cloud mode, there is no background image.
-      // So we can center the shape mask perfectly on the canvas and make it large.
-      const dim = Math.min(w, h) * 0.8;
-      const sealWidth  = dim;
-      const sealHeight = dim;
-      const sealLeft   = (w - sealWidth) / 2;
-      const sealTop    = (h - sealHeight) / 2;
+      // We center the full trophy shape mask. Mask aspect ratio is 652x817 (approx 0.8)
+      const maskAspect = 652 / 817;
+      let sealWidth, sealHeight;
+      if (w / h > maskAspect) {
+        sealHeight = h * 0.9;
+        sealWidth = sealHeight * maskAspect;
+      } else {
+        sealWidth = w * 0.9;
+        sealHeight = sealWidth / maskAspect;
+      }
+      const sealLeft = (w - sealWidth) / 2;
+      const sealTop = (h - sealHeight) / 2;
 
       div.style.left   = `${sealLeft}px`;
       div.style.top    = `${sealTop}px`;
       div.style.width  = `${sealWidth}px`;
       div.style.height = `${sealHeight}px`;
       div.style.overflow = "visible";
-      // Mask clips the word cloud to the seal silhouette
-      // maskSize "contain" fits the seal image exactly within the div
-      div.style.webkitMaskImage    = "url('/events_shape/iconic_shape_mask.jpg')";
-      div.style.maskImage          = "url('/events_shape/iconic_shape_mask.jpg')";
+      // Mask clips the word cloud to the full trophy silhouette
+      div.style.webkitMaskImage    = "url('/events_shape/iconic_full_trophy_mask.jpg')";
+      div.style.maskImage          = "url('/events_shape/iconic_full_trophy_mask.jpg')";
       div.style.webkitMaskSize     = "contain";
       div.style.maskSize           = "contain";
       div.style.webkitMaskRepeat   = "no-repeat";

@@ -178,18 +178,21 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       div.style.top = `${circleCY - circleR + padding}px`;
       div.style.width = `${size}px`;
       div.style.height = `${size}px`;
+      div.style.overflow = "visible";
       div.innerHTML = "";
 
       const maxVal  = processedWords[0]?.value || 1;
-      const minFont = Math.max(4, Math.round(size / 60));
-      const maxFont = Math.min(Math.round(size / 3.5), 160);
+      // For very few words, use a larger font so at least 1 word always fits
+      const wordCount = processedWords.length;
+      const minFont = wordCount <= 3 ? Math.max(8, Math.round(size / 12)) : Math.max(4, Math.round(size / 60));
+      const maxFont = Math.min(Math.round(size / (wordCount <= 3 ? 2.5 : 3.5)), 160);
       const list    = processedWords.map(({ text, value }) => [
         text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
       ]);
 
-      // Render wordcloud hidden first so we can read final positions
-      div.style.visibility = "hidden";
-      div.style.opacity = "1";
+      // Render the cloud fully visible so wordcloud2 can measure dimensions
+      // correctly. We hide individual words via opacity later.
+      div.style.opacity = "0"; // Hide container during layout pass only
 
       await new Promise((resolve) => {
         let finished = false;
@@ -210,67 +213,68 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           shuffle: true,
           shape: "circle",
         });
-        setTimeout(onStopRender, 700);
+        setTimeout(onStopRender, 1500); // Generous fallback
       });
 
-      // Make visible — animation starts from here
-      div.style.visibility = "visible";
+      // Wait one rAF to ensure wordcloud2 has flushed all span insertions
+      await new Promise(r => requestAnimationFrame(r));
+
+      const children = Array.from(div.children);
+      console.log(`[WordCloud] rendered ${children.length} words into div (size=${size}px)`);
+
+      // Set each word invisible immediately so they are hidden before animation
+      children.forEach(span => { span.style.opacity = "0"; });
+
+      // Now reveal the container — words are individually hidden
+      div.style.opacity = "1";
+
+      if (children.length === 0) {
+        // Nothing rendered — just show container as-is (empty golden circle)
+        console.warn("[WordCloud] wordcloud2 rendered 0 words. Words may be too large for circle.");
+        return;
+      }
 
       try {
-        const children = Array.from(div.children);
-        if (children.length === 0) return;
-
-        // The div is positioned at the circle location inside the container.
-        // We need the offset of the div relative to the container so we can
-        // compute how far each word must travel from an off-screen start.
         const divRect = div.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
 
-        // Half-dimensions of the outer container — used to pick launch points
-        // well outside the visible area
         const cW = containerRect.width;
         const cH = containerRect.height;
-        // Extra padding so words start truly outside the edges
-        const margin = Math.max(cW, cH) * 0.65;
+        // Launch point: well outside the container edges
+        const margin = Math.max(cW, cH) * 0.7;
 
-        // Stagger timing: spread words over ~2.4 s total
-        const totalStagger = Math.min(2400, children.length * 60);
+        // Stagger: spread words over 2 s total
+        const totalStagger = Math.min(2000, children.length * 50);
         const staggerStep  = children.length > 1 ? totalStagger / children.length : 0;
-        const flightDur    = 1600; // ms each word takes to fly to destination
+        const flightDur    = 1400;
 
-        // Temporarily allow words to be visible outside the container during flight
-        const containerEl = container;
-        containerEl.style.overflow = "visible";
-        // Restore overflow after the last word finishes its animation
-        const totalAnimTime = totalStagger + flightDur + 100;
-        setTimeout(() => { containerEl.style.overflow = "hidden"; }, totalAnimTime);
+        // Temporarily allow overflow so words are visible while outside container
+        container.style.overflow = "visible";
+        setTimeout(() => { container.style.overflow = "hidden"; }, totalStagger + flightDur + 200);
 
         children.forEach((span, i) => {
-          // Span's center relative to the div
+          // Word center relative to div
           const spanCX = span.offsetLeft + span.offsetWidth  / 2;
           const spanCY = span.offsetTop  + span.offsetHeight / 2;
 
-          // Span's center relative to the outer container
+          // Word center relative to outer container
           const absX = (divRect.left - containerRect.left) + spanCX;
           const absY = (divRect.top  - containerRect.top ) + spanCY;
 
-          // Direction vector from container center to span
-          const containerCX = cW / 2;
-          const containerCY = cH / 2;
-          let dx = absX - containerCX;
-          let dy = absY - containerCY;
+          // Radial direction: from container center outward through the word
+          const centerX = cW / 2;
+          const centerY = cH / 2;
+          let dx = absX - centerX;
+          let dy = absY - centerY;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          // Normalise and scale to margin so the start point is outside
+          // Scale so start point is outside the container
           dx = (dx / dist) * (dist + margin);
           dy = (dy / dist) * (dist + margin);
 
-          // translateX/Y that moves the span from its final position back to
-          // the launch point (we animate from launch → final = translate(0,0))
           const baseTransform = span.style.transform || "";
-          const startTranslate = `translate(${dx}px, ${dy}px)`;
 
           span.animate([
-            { opacity: 0, transform: `${startTranslate} ${baseTransform}` },
+            { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${baseTransform}` },
             { opacity: 1, transform: `translate(0px, 0px) ${baseTransform}` }
           ], {
             duration: flightDur,
@@ -280,7 +284,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           });
         });
       } catch (err) {
-        console.error("Animation error", err);
+        // If animation fails for any reason, just show words in place
+        children.forEach(span => { span.style.opacity = "1"; });
+        console.error("[WordCloud] Animation error:", err);
       }
     } else {
       if (htmlCloudRef.current) htmlCloudRef.current.innerHTML = "";

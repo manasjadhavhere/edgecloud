@@ -149,7 +149,11 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#1a0000";
     ctx.fillRect(0, 0, w, h);
-    if (trophyImg) ctx.drawImage(trophyImg, tX, tY, tW, tH);
+    
+    // Only draw the trophy background if we are in Trophy View
+    if (trophyImg && cloudMode !== "shape") {
+      ctx.drawImage(trophyImg, tX, tY, tW, tH);
+    }
 
     let processedWords = [...words];
     // Always seed with brand words in shape mode; only when fillShape for trophy mode
@@ -176,15 +180,13 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       const div = htmlCloudRef.current;
       if (!div) return;
 
-      // The wax seal in the trophy image occupies approx:
-      //   horizontal: 22%–78% of tW  (56% wide)
-      //   vertical:   2%–68% of tH   (66% tall, includes ribbon)
-      // Position the div exactly over this area so wordcloud2's
-      // center matches the mask's center.
-      const sealLeft   = tX + tW * 0.21;
-      const sealTop    = tY + tH * 0.02;
-      const sealWidth  = tW * 0.58;
-      const sealHeight = tH * 0.68;
+      // In Shape Cloud mode, there is no background image.
+      // So we can center the shape mask perfectly on the canvas and make it large.
+      const dim = Math.min(w, h) * 0.8;
+      const sealWidth  = dim;
+      const sealHeight = dim;
+      const sealLeft   = (w - sealWidth) / 2;
+      const sealTop    = (h - sealHeight) / 2;
 
       div.style.left   = `${sealLeft}px`;
       div.style.top    = `${sealTop}px`;

@@ -176,28 +176,40 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       const div = htmlCloudRef.current;
       if (!div) return;
 
-      // Cover full canvas; CSS mask clips to wax seal silhouette
-      div.style.left   = "0px";
-      div.style.top    = "0px";
-      div.style.width  = `${w}px`;
-      div.style.height = `${h}px`;
+      // The wax seal in the trophy image occupies approx:
+      //   horizontal: 22%–78% of tW  (56% wide)
+      //   vertical:   2%–68% of tH   (66% tall, includes ribbon)
+      // Position the div exactly over this area so wordcloud2's
+      // center matches the mask's center.
+      const sealLeft   = tX + tW * 0.21;
+      const sealTop    = tY + tH * 0.02;
+      const sealWidth  = tW * 0.58;
+      const sealHeight = tH * 0.68;
+
+      div.style.left   = `${sealLeft}px`;
+      div.style.top    = `${sealTop}px`;
+      div.style.width  = `${sealWidth}px`;
+      div.style.height = `${sealHeight}px`;
       div.style.overflow = "visible";
-      div.style.webkitMaskImage  = "url('/events_shape/iconic_shape_mask.jpg')";
-      div.style.maskImage        = "url('/events_shape/iconic_shape_mask.jpg')";
-      div.style.webkitMaskSize   = "60% auto";
-      div.style.maskSize         = "60% auto";
-      div.style.webkitMaskRepeat = "no-repeat";
-      div.style.maskRepeat       = "no-repeat";
-      div.style.webkitMaskPosition = "center 38%";
-      div.style.maskPosition       = "center 38%";
-      div.style.webkitMaskMode   = "luminance";
-      div.style.maskMode         = "luminance";
+      // Mask clips the word cloud to the seal silhouette
+      // maskSize "contain" fits the seal image exactly within the div
+      div.style.webkitMaskImage    = "url('/events_shape/iconic_shape_mask.jpg')";
+      div.style.maskImage          = "url('/events_shape/iconic_shape_mask.jpg')";
+      div.style.webkitMaskSize     = "contain";
+      div.style.maskSize           = "contain";
+      div.style.webkitMaskRepeat   = "no-repeat";
+      div.style.maskRepeat         = "no-repeat";
+      div.style.webkitMaskPosition = "center center";
+      div.style.maskPosition       = "center center";
+      div.style.webkitMaskMode     = "luminance";
+      div.style.maskMode           = "luminance";
       div.innerHTML = "";
 
-      const maxVal   = processedWords[0]?.value || 1;
-      const minFont  = Math.max(5, Math.round(w / 80));
-      const maxFont  = Math.min(Math.round(w / 8), 120);
-      const list     = processedWords.map(({ text, value }) => [
+      const maxVal  = processedWords[0]?.value || 1;
+      // Font sizes relative to the seal div width — conservative so words fit
+      const minFont = Math.max(5, Math.round(sealWidth / 50));
+      const maxFont = Math.min(Math.round(sealWidth / 6), 55);
+      const list    = processedWords.map(({ text, value }) => [
         text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
       ]);
 
@@ -209,7 +221,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         div.addEventListener("wordcloudstop", onDone, { once: true });
         WordCloud(div, {
           list,
-          gridSize: Math.max(2, Math.round(w / 300)),
+          gridSize: Math.max(4, Math.round(sealWidth / 120)),
           weightFactor: 1,
           fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
           fontWeight: "700",
@@ -223,12 +235,13 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           shuffle: true,
           shape: "circle",
         });
-        setTimeout(onDone, 2000);
+        setTimeout(onDone, 3000);
       });
 
       await new Promise(r => requestAnimationFrame(r));
 
       const children = Array.from(div.children);
+      console.log(`[ShapeCloud] ${children.length} words in ${sealWidth.toFixed(0)}×${sealHeight.toFixed(0)}px div`);
       children.forEach(s => { s.style.opacity = "0"; });
       div.style.opacity = "1";
 
@@ -237,7 +250,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         return;
       }
 
-      // Fly-in animation — same radial swarm from outer edges
+      // Fly-in animation — radial swarm from outer edges
       try {
         const divRect       = div.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
@@ -252,10 +265,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         setTimeout(() => { container.style.overflow = "hidden"; }, totalStagger + flightDur + 300);
 
         children.forEach((span, i) => {
-          const spanCX = span.offsetLeft + span.offsetWidth  / 2;
-          const spanCY = span.offsetTop  + span.offsetHeight / 2;
-          const absX   = (divRect.left - containerRect.left) + spanCX;
-          const absY   = (divRect.top  - containerRect.top ) + spanCY;
+          const spanCX  = span.offsetLeft + span.offsetWidth  / 2;
+          const spanCY  = span.offsetTop  + span.offsetHeight / 2;
+          const absX    = (divRect.left - containerRect.left) + spanCX;
+          const absY    = (divRect.top  - containerRect.top ) + spanCY;
           const centerX = cW / 2;
           const centerY = cH / 2;
           let dx = absX - centerX;
@@ -287,27 +300,31 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     if (useDOM) {
       const div = htmlCloudRef.current;
       if (!div) return;
-      const padding = 1;
-      const size = (circleR - padding) * 2;
-      div.style.left = `${circleCX - circleR + padding}px`;
-      div.style.top = `${circleCY - circleR + padding}px`;
-      div.style.width = `${size}px`;
-      div.style.height = `${size}px`;
+
+      // Use a 3× larger rendering area than the thin golden ring so that
+      // wordcloud2 has enough room to actually place words. The div is still
+      // centred on the circle centre; CSS overflow:visible lets fly-in work.
+      const renderR = circleR * 3.2;  // e.g. 82px * 3.2 = ~263px radius
+      const size    = Math.round(renderR * 2);  // div side length
+
+      div.style.left     = `${circleCX - renderR}px`;
+      div.style.top      = `${circleCY - renderR}px`;
+      div.style.width    = `${size}px`;
+      div.style.height   = `${size}px`;
       div.style.overflow = "visible";
-      div.innerHTML = "";
+      div.innerHTML      = "";
 
       const maxVal  = processedWords[0]?.value || 1;
-      // For very few words, use a larger font so at least 1 word always fits
-      const wordCount = processedWords.length;
-      const minFont = wordCount <= 3 ? Math.max(8, Math.round(size / 12)) : Math.max(4, Math.round(size / 60));
-      const maxFont = Math.min(Math.round(size / (wordCount <= 3 ? 2.5 : 3.5)), 160);
+      // Conservative font sizes so shrinkToFit doesn't need to work too hard
+      const minFont = Math.max(5, Math.round(size / 40));
+      const maxFont = Math.min(Math.round(size / 7), 28);
       const list    = processedWords.map(({ text, value }) => [
         text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
       ]);
 
-      // Render the cloud fully visible so wordcloud2 can measure dimensions
-      // correctly. We hide individual words via opacity later.
-      div.style.opacity = "0"; // Hide container during layout pass only
+      console.log(`[TrophyCloud] size=${size}px minFont=${minFont} maxFont=${maxFont} words=${processedWords.length}`);
+
+      div.style.opacity = "0";
 
       await new Promise((resolve) => {
         let finished = false;
@@ -315,7 +332,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         div.addEventListener("wordcloudstop", onStopRender, { once: true });
         WordCloud(div, {
           list,
-          gridSize: Math.max(2, Math.round(size / 300)),
+          gridSize: Math.max(4, Math.round(size / 120)),
           weightFactor: 1,
           fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
           fontWeight: "700",
@@ -328,80 +345,59 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           shuffle: true,
           shape: "circle",
         });
-        setTimeout(onStopRender, 1500); // Generous fallback
+        setTimeout(onStopRender, 3000);
       });
 
-      // Wait one rAF to ensure wordcloud2 has flushed all span insertions
       await new Promise(r => requestAnimationFrame(r));
 
       const children = Array.from(div.children);
-      console.log(`[WordCloud] rendered ${children.length} words into div (size=${size}px)`);
+      console.log(`[TrophyCloud] rendered ${children.length} word spans`);
 
-      // Set each word invisible immediately so they are hidden before animation
       children.forEach(span => { span.style.opacity = "0"; });
-
-      // Now reveal the container — words are individually hidden
       div.style.opacity = "1";
 
       if (children.length === 0) {
-        // Nothing rendered — just show container as-is (empty golden circle)
-        console.warn("[WordCloud] wordcloud2 rendered 0 words. Words may be too large for circle.");
+        console.warn("[TrophyCloud] 0 words rendered — check font sizes vs div size.");
         return;
       }
 
       try {
-        const divRect = div.getBoundingClientRect();
+        const divRect       = div.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-
         const cW = containerRect.width;
         const cH = containerRect.height;
-        // Launch point: well outside the container edges
         const margin = Math.max(cW, cH) * 0.7;
-
-        // Stagger: spread words over 2 s total
         const totalStagger = Math.min(2000, children.length * 50);
         const staggerStep  = children.length > 1 ? totalStagger / children.length : 0;
         const flightDur    = 1400;
 
-        // Temporarily allow overflow so words are visible while outside container
         container.style.overflow = "visible";
         setTimeout(() => { container.style.overflow = "hidden"; }, totalStagger + flightDur + 200);
 
         children.forEach((span, i) => {
-          // Word center relative to div
-          const spanCX = span.offsetLeft + span.offsetWidth  / 2;
-          const spanCY = span.offsetTop  + span.offsetHeight / 2;
-
-          // Word center relative to outer container
-          const absX = (divRect.left - containerRect.left) + spanCX;
-          const absY = (divRect.top  - containerRect.top ) + spanCY;
-
-          // Radial direction: from container center outward through the word
+          const spanCX  = span.offsetLeft + span.offsetWidth  / 2;
+          const spanCY  = span.offsetTop  + span.offsetHeight / 2;
+          const absX    = (divRect.left - containerRect.left) + spanCX;
+          const absY    = (divRect.top  - containerRect.top ) + spanCY;
           const centerX = cW / 2;
           const centerY = cH / 2;
           let dx = absX - centerX;
           let dy = absY - centerY;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          // Scale so start point is outside the container
           dx = (dx / dist) * (dist + margin);
           dy = (dy / dist) * (dist + margin);
-
           const baseTransform = span.style.transform || "";
-
           span.animate([
             { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${baseTransform}` },
-            { opacity: 1, transform: `translate(0px, 0px) ${baseTransform}` }
+            { opacity: 1, transform: `translate(0px, 0px) ${baseTransform}` },
           ], {
-            duration: flightDur,
-            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-            delay: i * staggerStep,
-            fill: 'both'
+            duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+            delay: i * staggerStep, fill: "both",
           });
         });
       } catch (err) {
-        // If animation fails for any reason, just show words in place
         children.forEach(span => { span.style.opacity = "1"; });
-        console.error("[WordCloud] Animation error:", err);
+        console.error("[TrophyCloud] Animation error:", err);
       }
     } else {
       if (htmlCloudRef.current) htmlCloudRef.current.innerHTML = "";

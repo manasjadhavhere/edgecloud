@@ -181,8 +181,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       if (!div) return;
 
       // In Shape Cloud mode, there is no background image.
-      // We center the full trophy shape mask. Mask aspect ratio is 652x817 (approx 0.8)
-      const maskAspect = 652 / 817;
+      // We center the new shape mask. Mask aspect ratio is 647x604 (approx 1.07)
+      const maskAspect = 647 / 604;
       let sealWidth, sealHeight;
       if (w / h > maskAspect) {
         sealHeight = h * 0.9;
@@ -199,9 +199,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       div.style.width  = `${sealWidth}px`;
       div.style.height = `${sealHeight}px`;
       div.style.overflow = "visible";
-      // Mask clips the word cloud to the full trophy silhouette
-      div.style.webkitMaskImage    = "url('/events_shape/iconic_full_trophy_mask.jpg')";
-      div.style.maskImage          = "url('/events_shape/iconic_full_trophy_mask.jpg')";
+      // Mask clips the word cloud to the full silhouette
+      div.style.webkitMaskImage    = "url('/events_shape/iconic_shape_mask_new.jpg')";
+      div.style.maskImage          = "url('/events_shape/iconic_shape_mask_new.jpg')";
       div.style.webkitMaskSize     = "contain";
       div.style.maskSize           = "contain";
       div.style.webkitMaskRepeat   = "no-repeat";

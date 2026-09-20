@@ -178,7 +178,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       div.style.top = `${circleCY - circleR + padding}px`;
       div.style.width = `${size}px`;
       div.style.height = `${size}px`;
-      div.innerHTML = ""; 
+      div.innerHTML = "";
 
       const maxVal  = processedWords[0]?.value || 1;
       const minFont = Math.max(4, Math.round(size / 60));
@@ -187,7 +187,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
       ]);
 
-      div.style.opacity = "0";
+      // Render wordcloud hidden first so we can read final positions
+      div.style.visibility = "hidden";
+      div.style.opacity = "1";
 
       await new Promise((resolve) => {
         let finished = false;
@@ -208,36 +210,71 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           shuffle: true,
           shape: "circle",
         });
-        setTimeout(onStopRender, 600); // Fast fallback timeout
+        setTimeout(onStopRender, 700);
       });
 
-      div.style.opacity = "1";
+      // Make visible — animation starts from here
+      div.style.visibility = "visible";
 
       try {
         const children = Array.from(div.children);
-        
-        // Global camera pull-back effect on the entire container
-        div.animate([
-          { transform: 'scale(1.2)' },
-          { transform: 'scale(1)' }
-        ], {
-          duration: 3500,
-          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-          fill: 'both'
-        });
+        if (children.length === 0) return;
 
-        // Individual words pop in with 3D scale and fade
-        const totalStaggerTime = Math.min(1200, children.length * 35);
-        const staggerStep = children.length > 0 ? totalStaggerTime / children.length : 0;
+        // The div is positioned at the circle location inside the container.
+        // We need the offset of the div relative to the container so we can
+        // compute how far each word must travel from an off-screen start.
+        const divRect = div.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        // Half-dimensions of the outer container — used to pick launch points
+        // well outside the visible area
+        const cW = containerRect.width;
+        const cH = containerRect.height;
+        // Extra padding so words start truly outside the edges
+        const margin = Math.max(cW, cH) * 0.65;
+
+        // Stagger timing: spread words over ~2.4 s total
+        const totalStagger = Math.min(2400, children.length * 60);
+        const staggerStep  = children.length > 1 ? totalStagger / children.length : 0;
+        const flightDur    = 1600; // ms each word takes to fly to destination
+
+        // Temporarily allow words to be visible outside the container during flight
+        const containerEl = container;
+        containerEl.style.overflow = "visible";
+        // Restore overflow after the last word finishes its animation
+        const totalAnimTime = totalStagger + flightDur + 100;
+        setTimeout(() => { containerEl.style.overflow = "hidden"; }, totalAnimTime);
 
         children.forEach((span, i) => {
+          // Span's center relative to the div
+          const spanCX = span.offsetLeft + span.offsetWidth  / 2;
+          const spanCY = span.offsetTop  + span.offsetHeight / 2;
+
+          // Span's center relative to the outer container
+          const absX = (divRect.left - containerRect.left) + spanCX;
+          const absY = (divRect.top  - containerRect.top ) + spanCY;
+
+          // Direction vector from container center to span
+          const containerCX = cW / 2;
+          const containerCY = cH / 2;
+          let dx = absX - containerCX;
+          let dy = absY - containerCY;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          // Normalise and scale to margin so the start point is outside
+          dx = (dx / dist) * (dist + margin);
+          dy = (dy / dist) * (dist + margin);
+
+          // translateX/Y that moves the span from its final position back to
+          // the launch point (we animate from launch → final = translate(0,0))
           const baseTransform = span.style.transform || "";
+          const startTranslate = `translate(${dx}px, ${dy}px)`;
+
           span.animate([
-            { opacity: 0, transform: `${baseTransform} scale(2.6)` },
-            { opacity: 1, transform: `${baseTransform} scale(1)` }
+            { opacity: 0, transform: `${startTranslate} ${baseTransform}` },
+            { opacity: 1, transform: `translate(0px, 0px) ${baseTransform}` }
           ], {
-            duration: 1000, 
-            easing: 'cubic-bezier(0.16, 1, 0.3, 1)', 
+            duration: flightDur,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
             delay: i * staggerStep,
             fill: 'both'
           });

@@ -39,6 +39,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
   const [isFullscreen, setIsFullscreen] = useState(false);
   // "trophy" = existing golden-circle word cloud, "shape" = full wax-seal shape cloud
   const [cloudMode, setCloudMode] = useState("trophy");
+  
+  // Track render generation to abort old overlapping async draw calls
+  const drawGeneration = useRef(0);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -56,12 +59,16 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
   const drawCloud = useCallback(async () => {
     if (!words || words.length === 0) return;
+    
+    const currentGen = ++drawGeneration.current;
+    
     const container = containerRef.current;
     const canvas    = canvasRef.current;
     if (!container || !canvas) return;
 
     const colors = THEME_COLORS[theme] || THEME_COLORS.default;
     const { default: WordCloud } = await import("wordcloud");
+    if (currentGen !== drawGeneration.current) return;
 
     const rect = container.getBoundingClientRect();
     const w = Math.floor(rect.width) || 800;
@@ -79,6 +86,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
       if (fillShape) {
         const maskCanvas = await getMaskCanvas(theme, w, h);
+        if (currentGen !== drawGeneration.current) return;
         if (maskCanvas) {
           ctx.drawImage(maskCanvas, 0, 0, w, h);
           return;
@@ -89,6 +97,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       ctx.fillRect(0, 0, w, h);
       
       const maskCanvas = await getMaskCanvas(theme, w, h);
+      if (currentGen !== drawGeneration.current) return;
       if (maskCanvas) {
         ctx.drawImage(maskCanvas, 0, 0);
       }
@@ -132,6 +141,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     let trophyImg = null;
     try { trophyImg = await loadImage("/events_shape/best_iconic_brands.png"); } 
     catch (e) { console.warn("Trophy image failed to load", e); }
+    if (currentGen !== drawGeneration.current) return;
 
     const trophyAspect = 1456 / 816;
     const canvasAspect = w / h;
@@ -205,6 +215,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       // Load mask image
       try {
         const maskImg = await loadImage("/events_shape/crown_mask.jpg");
+        if (currentGen !== drawGeneration.current) return;
         offCtx.drawImage(maskImg, 0, 0, sealWidth, sealHeight);
         
         // wordcloud2.js considers pixels that match backgroundColor as "empty" space.
@@ -276,10 +287,13 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         setTimeout(onDone, 3000);
       });
 
+      if (currentGen !== drawGeneration.current) return;
+
       // wordcloud2.js forces position: relative; we MUST override it back to absolute
       div.style.position = "absolute";
 
       await new Promise(r => requestAnimationFrame(r));
+      if (currentGen !== drawGeneration.current) return;
 
       const children = Array.from(div.children);
       console.log(`[ShapeCloud] ${children.length} words in ${sealWidth.toFixed(0)}×${sealHeight.toFixed(0)}px div`);
@@ -392,10 +406,13 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         setTimeout(onStopRender, 3000);
       });
 
+      if (currentGen !== drawGeneration.current) return;
+
       // Override wordcloud2.js position: relative
       div.style.position = "absolute";
 
       await new Promise(r => requestAnimationFrame(r));
+      if (currentGen !== drawGeneration.current) return;
 
       const children = Array.from(div.children);
       console.log(`[TrophyCloud] rendered ${children.length} word spans`);
@@ -495,6 +512,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         });
         setTimeout(onStopRender, 1200); 
       });
+
+      if (currentGen !== drawGeneration.current) return;
 
       const imgData = offCtx.getImageData(0, 0, offDim, offDim);
       const data = imgData.data;

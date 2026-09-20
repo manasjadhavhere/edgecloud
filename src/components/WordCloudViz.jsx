@@ -153,9 +153,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
     let processedWords = [...words];
     // Always seed with brand words in shape mode; only when fillShape for trophy mode
-    if ((fillShape || cloudMode === "shape") && processedWords.length > 0) {
+    if (fillShape || cloudMode === "shape") {
       if (processedWords.length < 30) {
-        const baseValue = processedWords[0].value;
+        const baseValue = processedWords.length > 0 ? processedWords[0].value : 50;
         iconicBrandWords.forEach(word => {
           processedWords.push({ text: word, value: baseValue * 0.4 });
         });
@@ -229,7 +229,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
             colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
           rotateRatio: 0,
           backgroundColor: "transparent",
-          drawOutOfBound: false,
+          drawOutOfBound: true,
           shrinkToFit: true,
           minSize: minFont,
           shuffle: true,
@@ -238,11 +238,13 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         setTimeout(onDone, 3000);
       });
 
+      // wordcloud2.js forces position: relative; we MUST override it back to absolute
+      div.style.position = "absolute";
+
       await new Promise(r => requestAnimationFrame(r));
 
       const children = Array.from(div.children);
       console.log(`[ShapeCloud] ${children.length} words in ${sealWidth.toFixed(0)}×${sealHeight.toFixed(0)}px div`);
-      children.forEach(s => { s.style.opacity = "0"; });
       div.style.opacity = "1";
 
       if (children.length === 0) {
@@ -277,10 +279,14 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           dx = (dx / dist) * (dist + margin);
           dy = (dy / dist) * (dist + margin);
           const bt = span.style.transform || "";
+          
+          // Set base opacity to 1 so they remain visible after animation
+          span.style.opacity = "1";
+          
           span.animate([
             { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${bt}` },
             { opacity: 1, transform: `translate(0px, 0px) ${bt}` },
-          ], { duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)", delay: i * staggerStep, fill: "both" });
+          ], { duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)", delay: i * staggerStep, fill: "backwards" });
         });
       } catch (err) {
         children.forEach(s => { s.style.opacity = "1"; });
@@ -339,7 +345,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           color: (_w, _wt, _fs, _d, theta) => colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
           rotateRatio: 0,
           backgroundColor: "transparent",
-          drawOutOfBound: false,
+          drawOutOfBound: true,
           shrinkToFit: true,
           minSize: minFont,
           shuffle: true,
@@ -348,12 +354,14 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         setTimeout(onStopRender, 3000);
       });
 
+      // Override wordcloud2.js position: relative
+      div.style.position = "absolute";
+
       await new Promise(r => requestAnimationFrame(r));
 
       const children = Array.from(div.children);
       console.log(`[TrophyCloud] rendered ${children.length} word spans`);
 
-      children.forEach(span => { span.style.opacity = "0"; });
       div.style.opacity = "1";
 
       if (children.length === 0) {
@@ -387,12 +395,16 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           dx = (dx / dist) * (dist + margin);
           dy = (dy / dist) * (dist + margin);
           const baseTransform = span.style.transform || "";
+          
+          // Set base opacity to 1 so they remain visible after animation ends
+          span.style.opacity = "1";
+          
           span.animate([
             { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${baseTransform}` },
             { opacity: 1, transform: `translate(0px, 0px) ${baseTransform}` },
           ], {
             duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-            delay: i * staggerStep, fill: "both",
+            delay: i * staggerStep, fill: "backwards",
           });
         });
       } catch (err) {

@@ -1,647 +1,689 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { getMaskCanvas } from "../utils/masks";
-import iconicBrandWords from "../data/iconicBrandWords.json";
 import { Maximize, Minimize, StopCircle } from "lucide-react";
 
+/**
+ * Build a wordcloud2 collision mask from an image.
+ * White pixels (R > 128) → transparent (words go here)
+ * Dark  pixels            → opaque red  (words blocked)
+ */
+function buildMaskCanvas(img, w, h) {
+  const off    = document.createElement("canvas");
+  off.width    = w; off.height = h;
+  const ctx    = off.getContext("2d");
+  ctx.drawImage(img, 0, 0, w, h);
+  const id = ctx.getImageData(0, 0, w, h);
+  for (let i = 0; i < id.data.length; i += 4) {
+    if (id.data[i] > 128) {
+      id.data[i + 3] = 0;
+    } else {
+      id.data[i]=255; id.data[i+1]=0; id.data[i+2]=0; id.data[i+3]=255;
+    }
+  }
+  ctx.putImageData(id, 0, 0);
+  return off;
+}
+
+/** Fisher-Yates shuffle (returns new shuffled array) */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const THEME_COLORS = {
-  // Golden & black — perfect contrast for the red trophy
   iconic:   ["#FFD700", "#F5C518", "#DAA520", "#FFC200", "#FFE566", "#B8860B", "#FFF3B0", "#C5A000", "#FFDF00", "#E8B800"],
-  tech:     ["#003D73", "#00529B", "#0277BD", "#0288D1", "#006064", "#00838F", "#1565C0", "#01579B", "#0097A7", "#004D87"],
-  consumer: ["#0B132C", "#D4AF37", "#131A2D", "#C5A059", "#1A2639", "#B8860B", "#8B1818", "#0A192F", "#F9E596", "#040B18"],
+  tech:     ["#003D73", "#00529B", "#0277BD", "#0288D1", "#006064", "#00838F", "#1565C0", "#01579B"],
+  consumer: ["#0B132C", "#D4AF37", "#131A2D", "#C5A059", "#1A2639", "#B8860B", "#8B1818", "#0A192F"],
   default:  ["#8B1818", "#00529B", "#16A34A", "#B45309", "#4338CA", "#BE123C", "#0F766E", "#0369A1"],
 };
 
-/** Load an image and return HTMLImageElement */
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
+function loadImg(src) {
+  return new Promise(resolve => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = (e) => reject(e);
+    img.onload  = () => resolve(img);
+    img.onerror = () => { console.warn("[WordCloud] failed to load:", src); resolve(null); };
     img.src = src;
-    if (img.complete) {
-      resolve(img);
-    }
   });
 }
 
 /**
- * For the iconic theme, the word cloud is rendered into the inner circle of
- * the trophy image. The trophy PNG is composited on a dark background, and
- * the word cloud (golden palette) is drawn clipped to the inner golden circle.
+ * WordCloudViz — real-time word cloud for EdgeCloud.
  *
- * For other themes the existing SVG mask strategy is used unchanged.
+ * For the "iconic" theme, a toggle lets the host switch between:
+ *   • Trophy View  — words appear in the golden seal of the iconic brands trophy
+ *   • Shape Cloud  — words fill the crown silhouette
+ *
+ * Words update in real-time. Switching modes restores a cached render
+ * so the layout never changes just from toggling.
  */
 export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false, onStop = null }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
   const htmlCloudRef = useRef(null);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // "trophy" = existing golden-circle word cloud, "shape" = full wax-seal shape cloud
-  const [cloudMode, setCloudMode] = useState("trophy");
-  
-  // Track render generation to abort old overlapping async draw calls
-  const drawGeneration = useRef(0);
+  const [cloudMode, setCloudMode]       = useState("trophy"); // "trophy" | "shape" | "full_trophy"
+
+  // Generation counter — increment aborts any stale async draw
+  const genRef = useRef(0);
+
+  /**
+   * Pre-loaded images — loaded once at mount so drawCloud never awaits images
+   * (eliminates the race where gen changes while awaiting loadImg).
+   */
+  const imgRefs = useRef({ trophy: null, crown: null, fullTrophy: null });
 
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    // Pre-load all iconic-theme images at mount
+    const load = (src, key) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload  = () => { imgRefs.current[key] = img; };
+      img.onerror = () => console.warn("[WordCloud] preload failed:", src);
+      img.src = src;
+    };
+    load("/events_shape/best_iconic_brands.png", "trophy");
+    load("/events_shape/crown_mask.jpg",          "crown");
+    load("/events_shape/iconic_full_trophy_mask.jpg", "fullTrophy");
+  }, []);
+
+  /**
+   * Per-mode render cache.
+   * cacheKey = JSON.stringify(words) + "|" + isFullscreen
+   */
+  const cache = useRef({ trophy: null, shape: null, full_trophy: null });
+
+  useEffect(() => {
+    const fn = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", fn);
+    return () => document.removeEventListener("fullscreenchange", fn);
   }, []);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch(err => console.error(err));
-    } else {
-      document.exitFullscreen().catch(err => console.error(err));
-    }
+    if (!document.fullscreenElement) containerRef.current?.requestFullscreen().catch(console.error);
+    else document.exitFullscreen().catch(console.error);
   };
 
+  // ─── Restore from cache ────────────────────────────────────────────────────
+  const restoreFromCache = useCallback((entry) => {
+    const canvas = canvasRef.current;
+    const div    = htmlCloudRef.current;
+    if (!canvas || !div) return;
+
+    // Restore canvas pixels from the saved offscreen canvas
+    canvas.width  = entry.offscreenCanvas.width;
+    canvas.height = entry.offscreenCanvas.height;
+    if (forwardedRef) forwardedRef.current = canvas;
+    canvas.getContext("2d").drawImage(entry.offscreenCanvas, 0, 0);
+
+    // Restore div spans
+    div.style.position     = "absolute";
+    div.style.left         = `${entry.divLeft}px`;
+    div.style.top          = `${entry.divTop}px`;
+    div.style.width        = `${entry.divW}px`;
+    div.style.height       = `${entry.divH}px`;
+    div.style.overflow     = entry.divOverflow     || "visible";
+    div.style.borderRadius = entry.divBorderRadius || "0";
+    div.style.opacity      = "0";
+    div.innerHTML          = entry.innerHTML;
+
+    // Smooth fade-in instead of fly-in animation (it's a cached restore)
+    requestAnimationFrame(() => { div.style.opacity = "1"; });
+  }, [forwardedRef]);
+
+  // ─── Save current render to cache ─────────────────────────────────────────
+  const saveToCache = useCallback((mode, cacheKey, divLeft, divTop, divW, divH) => {
+    const canvas = canvasRef.current;
+    const div    = htmlCloudRef.current;
+    if (!canvas || !div) return;
+
+    // Copy canvas pixels to an offscreen canvas so we can restore later
+    const off    = document.createElement("canvas");
+    off.width    = canvas.width;
+    off.height   = canvas.height;
+    off.getContext("2d").drawImage(canvas, 0, 0);
+
+    cache.current[mode] = {
+      cacheKey,
+      offscreenCanvas: off,
+      innerHTML:       div.innerHTML,
+      divLeft, divTop, divW, divH,
+      divOverflow:     div.style.overflow     || "visible",
+      divBorderRadius: div.style.borderRadius || "0",
+    };
+  }, []);
+
+  // ─── Core draw function ────────────────────────────────────────────────────
   const drawCloud = useCallback(async () => {
     if (!words || words.length === 0) return;
-    
-    const currentGen = ++drawGeneration.current;
-    
+
+    const cacheKey = JSON.stringify(words) + "|" + isFullscreen;
+
+    // ── Cache hit: same words, same fullscreen, switching mode back → restore ──
+    const hit = cache.current[cloudMode];
+    if (hit && hit.cacheKey === cacheKey) {
+      restoreFromCache(hit);
+      return;
+    }
+
+    // ── Cache miss: full re-render ────────────────────────────────────────────
+    const gen       = ++genRef.current;
     const container = containerRef.current;
     const canvas    = canvasRef.current;
-    if (!container || !canvas) return;
+    const div       = htmlCloudRef.current;
+    if (!container || !canvas || !div) return;
 
-    const colors = THEME_COLORS[theme] || THEME_COLORS.default;
+    // Wait for layout to give real dimensions
+    let w = container.clientWidth, h = container.clientHeight;
+    for (let i = 0; (w === 0 || h === 0) && i < 20; i++) {
+      await new Promise(r => requestAnimationFrame(r));
+      if (gen !== genRef.current) return;
+      w = container.clientWidth;
+      h = container.clientHeight;
+    }
+    if (w === 0 || h === 0) return;
+
     const { default: WordCloud } = await import("wordcloud");
-    if (currentGen !== drawGeneration.current) return;
+    if (gen !== genRef.current) return;
 
-    const rect = container.getBoundingClientRect();
-    const w = Math.floor(rect.width) || 800;
-    const h = Math.floor(rect.height) || 600;
-
-    canvas.width  = w;
-    canvas.height = h;
-    if (forwardedRef) forwardedRef.current = canvas;
-    const ctx = canvas.getContext("2d");
     const isIconic = theme === "iconic";
+    const colors   = THEME_COLORS[theme] || THEME_COLORS.default;
 
-    // ── NON-ICONIC THEMES ────────────────────────────────────────
-    if (theme !== "iconic") {
+    // ── NON-ICONIC THEMES ─────────────────────────────────────────────────────
+    if (!isIconic) {
+      canvas.width  = w;
+      canvas.height = h;
+      if (forwardedRef) forwardedRef.current = canvas;
+      const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, w, h);
-
-      if (fillShape) {
-        const maskCanvas = await getMaskCanvas(theme, w, h);
-        if (currentGen !== drawGeneration.current) return;
-        if (maskCanvas) {
-          ctx.drawImage(maskCanvas, 0, 0, w, h);
-          return;
-        }
-      }
-
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, w, h);
-      
-      const maskCanvas = await getMaskCanvas(theme, w, h);
-      if (currentGen !== drawGeneration.current) return;
-      if (maskCanvas) {
-        ctx.drawImage(maskCanvas, 0, 0);
+
+      const mask = await getMaskCanvas(theme, w, h);
+      if (gen !== genRef.current) return;
+      if (mask) {
+        ctx.drawImage(mask, 0, 0, w, h);
+        const id = ctx.getImageData(0, 0, w, h);
+        for (let i = 0; i < id.data.length; i += 4) {
+          if (id.data[i] === 255 && id.data[i+1] === 255 && id.data[i+2] === 255) id.data[i+3] = 0;
+        }
+        ctx.putImageData(id, 0, 0);
       }
 
-      const maxVal  = words[0]?.value || 1;
-      const minFont = Math.max(4, Math.round(w / 60));
-      const maxFont = Math.min(Math.round(w / 3.5), 160);
-      const list    = words.map(({ text, value }) => [
-        text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
-      ]);
+      const maxVal  = Math.max(...words.map(w => w.value), 1);
+      const minFont = Math.max(10, Math.round(w / 40));
+      const maxFont = Math.min(Math.round(w / 6), 140);
 
-      await new Promise((resolve) => {
-        let finished = false;
-        const onStopRender = () => { if (finished) return; finished = true; resolve(); };
-        canvas.addEventListener("wordcloudstop", onStopRender, { once: true });
-        
+      await new Promise(resolve => {
+        let done = false;
+        const ok = () => { if (!done) { done = true; resolve(); } };
+        canvas.addEventListener("wordcloudstop", ok, { once: true });
         WordCloud(canvas, {
-          list,
-          gridSize:        Math.max(4, Math.round(w / 200)),
+          list:            words.map(({ text, value }) => [text, Math.round(minFont + ((value/maxVal) ** 1.1) * (maxFont - minFont))]),
+          gridSize:        Math.max(6, Math.round(w / 120)),
           weightFactor:    1,
-          fontFamily:      "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+          fontFamily:      "'Segoe UI', Arial, sans-serif",
           fontWeight:      "700",
-          color:           (_w, _wt, _fs, _d, theta) => {
-            const idx = Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length;
-            return colors[idx];
-          },
+          color:           (_w, _wt, _fs, _d, theta) => colors[Math.abs(Math.floor((theta/(2*Math.PI))*colors.length)) % colors.length],
           rotateRatio:     0,
           backgroundColor: "transparent",
           clearCanvas:     false,
           drawOutOfBound:  false,
           shrinkToFit:     true,
-          minSize:         minFont,
           shuffle:         true,
         });
-        setTimeout(onStopRender, 500);
+        setTimeout(ok, 5000);
       });
       return;
     }
 
-    // ── ICONIC THEME ───────────────────────────────────────────
-    let trophyImg = null;
-    try { trophyImg = await loadImage("/events_shape/best_iconic_brands.png"); } 
-    catch (e) { console.warn("Trophy image failed to load", e); }
-    if (currentGen !== drawGeneration.current) return;
-
-    const trophyAspect = 1456 / 816;
-    const canvasAspect = w / h;
-    let tW, tH, tX, tY;
-    if (canvasAspect > trophyAspect) {
-      tH = h; tW = h * trophyAspect; tX = (w - tW) / 2; tY = 0;
-    } else {
-      tW = w; tH = w / trophyAspect; tX = 0; tY = (h - tH) / 2;
-    }
-
-    const circleCX = tX + tW * 0.492;
-    const circleCY = tY + tH * 0.344;
-    const circleR  = tW * 0.086;
-
+    // ── ICONIC THEME — paint dark background ──────────────────────────────────
+    canvas.width  = w;
+    canvas.height = h;
+    if (forwardedRef) forwardedRef.current = canvas;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#1a0000";
     ctx.fillRect(0, 0, w, h);
-    
-    // Only draw the trophy background if we are in Trophy View
-    if (trophyImg && cloudMode !== "shape") {
-      ctx.drawImage(trophyImg, tX, tY, tW, tH);
-    }
 
-    let processedWords = [...words];
-    // Always seed with brand words in shape mode; only when fillShape for trophy mode
-    if (fillShape || cloudMode === "shape") {
-      if (processedWords.length < 30) {
-        const baseValue = processedWords.length > 0 ? processedWords[0].value : 50;
-        iconicBrandWords.forEach(word => {
-          processedWords.push({ text: word, value: baseValue * 0.4 });
-        });
-      }
-      // Increase filler words to ensure tight corners and spikes get densely packed
-      const fillerNeeded = 800 - processedWords.length;
-      if (fillerNeeded > 0) {
-        for (let i = 0; i < fillerNeeded; i++) {
-          const si = Math.floor(Math.random() * processedWords.length);
-          // Randomize the value of filler words slightly so they fill varying gap sizes
-          const sizeFactor = 0.04 + Math.random() * 0.06;
-          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * sizeFactor });
-        }
-      }
-    }
+    div.innerHTML = "";
+    div.style.opacity = "0";
 
-    if (processedWords.length === 0) return;
+    const maxVal = Math.max(...words.map(w => w.value), 1);
+    let divLeft = 0, divTop = 0, divW = 0, divH = 0;
 
-    // ── SHAPE CLOUD MODE ────────────────────────────────────────
-    if (cloudMode === "shape") {
-      const div = htmlCloudRef.current;
-      if (!div) return;
+    // ── TROPHY VIEW ───────────────────────────────────────────────────────────
+    if (cloudMode === "trophy") {
+      // Use pre-loaded image (synchronous — no race condition)
+      const trophy = imgRefs.current.trophy;
 
-      // In Shape Cloud mode, there is no background image.
-      // We center the new shape mask. Mask aspect ratio is 566x432 (approx 1.31)
-      const maskAspect = 566 / 432;
-      let sealWidth, sealHeight;
-      if (w / h > maskAspect) {
-        sealHeight = h * 0.9;
-        sealWidth = sealHeight * maskAspect;
-      } else {
-        sealWidth = w * 0.9;
-        sealHeight = sealWidth / maskAspect;
-      }
-      const sealLeft = (w - sealWidth) / 2;
-      const sealTop = (h - sealHeight) / 2;
+      if (trophy) {
+        const tAspect = trophy.naturalWidth / trophy.naturalHeight;
+        let tW, tH, tX, tY;
+        if (w / h > tAspect) { tH = h; tW = h * tAspect; tX = (w - tW) / 2; tY = 0; }
+        else                  { tW = w; tH = w / tAspect; tX = 0; tY = (h - tH) / 2; }
+        ctx.drawImage(trophy, tX, tY, tW, tH);
 
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width = sealWidth;
-      offCanvas.height = sealHeight;
-      const offCtx = offCanvas.getContext("2d");
+        // Golden seal position
+        const cX = tX + tW * 0.492;
+        const cY = tY + tH * 0.344;
+        const cR = tW * 0.086;
 
-      // Load mask image
-      try {
-        const maskImg = await loadImage("/events_shape/crown_mask.jpg");
-        if (currentGen !== drawGeneration.current) return;
-        offCtx.drawImage(maskImg, 0, 0, sealWidth, sealHeight);
-        
-        // wordcloud2.js considers pixels that match backgroundColor as "empty" space.
-        // We will use backgroundColor: "transparent", so we need to make the crown interior transparent,
-        // and the exterior solid (so it's treated as blocked).
-        const imgData = offCtx.getImageData(0, 0, sealWidth, sealHeight);
-        for (let i = 0; i < imgData.data.length; i += 4) {
-          // In crown_mask.jpg, the crown is white (>128) and outside is black
-          if (imgData.data[i] > 128) {
-            imgData.data[i + 3] = 0; // Transparent -> inside the crown (allowed)
-          } else {
-            imgData.data[i] = 255;
-            imgData.data[i + 1] = 0;
-            imgData.data[i + 2] = 0;
-            imgData.data[i + 3] = 255; // Solid red -> outside the crown (blocked)
+        // Render area = exactly the seal circle (diameter = 2*cR)
+        const size = Math.round(cR * 2);
+        divLeft = Math.round(cX - cR);
+        divTop  = Math.round(cY - cR);
+        divW    = size;
+        divH    = size;
+
+        // Build a circular mask canvas: transparent inside circle, red outside
+        // wordcloud2 uses this to restrict word placement strictly to the circle
+        const maskOff    = document.createElement("canvas");
+        maskOff.width    = size;
+        maskOff.height   = size;
+        const maskOffCtx = maskOff.getContext("2d");
+        const maskId     = maskOffCtx.getImageData(0, 0, size, size);
+        const cx = size / 2, cy = size / 2;
+        for (let py = 0; py < size; py++) {
+          for (let px = 0; px < size; px++) {
+            const dx = px - cx, dy = py - cy;
+            const idx = (py * size + px) * 4;
+            if (dx * dx + dy * dy <= cx * cx) {
+              // Inside circle → transparent (wordcloud2 places words here)
+              maskId.data[idx] = 0; maskId.data[idx+1] = 0;
+              maskId.data[idx+2] = 0; maskId.data[idx+3] = 0;
+            } else {
+              // Outside circle → opaque red (wordcloud2 avoids this)
+              maskId.data[idx] = 255; maskId.data[idx+1] = 0;
+              maskId.data[idx+2] = 0; maskId.data[idx+3] = 255;
+            }
           }
         }
-        offCtx.putImageData(imgData, 0, 0);
-      } catch (err) {
-        console.warn("Failed to load crown mask for offscreen canvas", err);
+        maskOffCtx.putImageData(maskId, 0, 0);
+
+        div.style.position = "absolute";
+        div.style.left   = `${divLeft}px`;
+        div.style.top    = `${divTop}px`;
+        div.style.width  = `${divW}px`;
+        div.style.height = `${divH}px`;
+        div.style.overflow = "hidden";
+        div.style.borderRadius = "50%";
+
+        const minFont = Math.max(5, isFullscreen ? 8 : 5);
+        const maxFont = Math.min(isFullscreen ? 80 : 45, Math.round(size / 4));
+
+        await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if (!done) { done = true; resolve(); } };
+          div.addEventListener("wordcloudstop", ok, { once: true });
+          WordCloud([maskOff, div], {
+            list:            words.map(({ text, value }) => [text, value]),
+            gridSize:        Math.max(4, Math.round(size / 60)),
+            weightFactor:    (s) => {
+              return minFont + Math.pow(Math.max(0.1, s / maxVal), 1.1) * (maxFont - minFont);
+            },
+            fontFamily:      "Impact, 'Arial Black', sans-serif",
+            color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+            rotateRatio:     0,
+            backgroundColor: "transparent",
+            drawOutOfBound:  false,
+            shrinkToFit:     true,
+            clearCanvas:     false,
+          });
+          setTimeout(ok, 4000);
+        });
+
+        if (gen !== genRef.current) return;
+
+        // ⚠️ wordcloud2 forces position:relative — reset back to absolute
+        div.style.position   = "absolute";
+        div.style.left       = `${divLeft}px`;
+        div.style.top        = `${divTop}px`;
+        div.style.width      = `${divW}px`;
+        div.style.height     = `${divH}px`;
+        div.style.overflow   = "hidden";
+        div.style.borderRadius = "50%";
+        div.style.opacity    = "1";
       }
+    }
 
-      div.style.left   = `${sealLeft}px`;
-      div.style.top    = `${sealTop}px`;
-      div.style.width  = `${sealWidth}px`;
-      div.style.height = `${sealHeight}px`;
-      div.style.overflow = "visible";
-      
-      // Remove CSS masks entirely since layout engine will prevent cutoff!
-      div.style.webkitMaskImage = "";
-      div.style.maskImage       = "";
-      div.innerHTML = "";
+    // ── SHAPE CLOUD (crown) ───────────────────────────────────────────────────
+    if (cloudMode === "shape") {
+      // Use pre-loaded image (synchronous — no race condition)
+      const maskImg = imgRefs.current.crown;
+      if (!maskImg) return;
 
-      const maxVal  = processedWords[0]?.value || 1;
-      // Font sizes must be allowed to get extremely small (e.g. 4px) to fit in the narrow spikes
-      const minFont = 4;
-      const maxFont = Math.min(Math.round(sealWidth / 7), 50);
-      const list    = processedWords.map(({ text, value }) => [
-        text, Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)),
-      ]);
+      const PAD    = 20;
+      const availW = w - PAD * 2, availH = h - PAD * 2;
+      const aspect = maskImg.naturalWidth / maskImg.naturalHeight;
+      let sw = availW, sh = availW / aspect;
+      if (sh > availH) { sh = availH; sw = sh * aspect; }
+      sw = Math.round(sw); sh = Math.round(sh);
+      const sl = Math.round(PAD + (availW - sw) / 2);
+      const st = Math.round(PAD + (availH - sh) / 2);
+      divLeft = sl; divTop = st; divW = sw; divH = sh;
 
-      div.style.opacity = "0";
+      const off = buildMaskCanvas(maskImg, sw, sh);
+
+      div.style.position     = "absolute";
+      div.style.left         = `${sl}px`;
+      div.style.top          = `${st}px`;
+      div.style.width        = `${sw}px`;
+      div.style.height       = `${sh}px`;
+      div.style.overflow     = "visible";
+      div.style.borderRadius = "0";
+
+      const minFont = Math.max(4, isFullscreen ? 6 : 4);
+      const maxFont = Math.min(isFullscreen ? 90 : 60, Math.round(sw / 6));
 
       await new Promise(resolve => {
         let done = false;
-        const onDone = () => { if (done) return; done = true; resolve(); };
-        div.addEventListener("wordcloudstop", onDone, { once: true });
-        
-        // Pass BOTH the offCanvas and the div. 
-        // offCanvas provides the layout mask, div receives the text spans.
-        WordCloud([offCanvas, div], {
-          list,
-          // Smaller gridSize allows words to be packed more tightly, perfect for narrow spikes
-          gridSize: Math.max(2, Math.round(sealWidth / 250)),
-          weightFactor: 1,
-          fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-          fontWeight: "700",
-          color: (_w, _wt, _fs, _d, theta) =>
-            colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
-          rotateRatio: 0,
+        const ok = () => { if (!done) { done = true; resolve(); } };
+        div.addEventListener("wordcloudstop", ok, { once: true });
+        WordCloud([off, div], {
+          list:            words.map(({ text, value }) => [text, value]),
+          gridSize:        Math.max(3, Math.round(sw / 100)),
+          weightFactor:    (size) => {
+            return minFont + Math.pow(Math.max(0.1, size / maxVal), 1.2) * (maxFont - minFont);
+          },
+          fontFamily:      "Impact, 'Arial Black', sans-serif",
+          color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+          rotateRatio:     0.4,      // allow some vertical words to fill the tall crown spikes
+          rotationSteps:   2,
           backgroundColor: "transparent",
-          clearCanvas: false, // THIS IS THE MAGIC: uses existing canvas pixels as mask
-          drawOutOfBound: false, // Do not draw outside the allowed area
-          shrinkToFit: true,
-          minSize: minFont,
-          shuffle: true,
-          shape: "circle",
+          drawOutOfBound:  false,
+          shrinkToFit:     true,
+          clearCanvas:     false,
         });
-        setTimeout(onDone, 3000);
+        setTimeout(ok, 4000);
       });
 
-      if (currentGen !== drawGeneration.current) return;
+      if (gen !== genRef.current) return;
 
-      // wordcloud2.js forces position: relative; we MUST override it back to absolute
-      div.style.position = "absolute";
-
-      await new Promise(r => requestAnimationFrame(r));
-      if (currentGen !== drawGeneration.current) return;
-
-      const children = Array.from(div.children);
-      console.log(`[ShapeCloud] ${children.length} words in ${sealWidth.toFixed(0)}×${sealHeight.toFixed(0)}px div`);
-      div.style.opacity = "1";
-
-      if (children.length === 0) {
-        console.warn("[WordCloud Shape] 0 words rendered.");
-        return;
-      }
-
-      // Fly-in animation — radial swarm from outer edges
-      try {
-        const divRect       = div.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const cW = containerRect.width;
-        const cH = containerRect.height;
-        const margin = Math.max(cW, cH) * 0.75;
-        const totalStagger = Math.min(2400, children.length * 50);
-        const staggerStep  = children.length > 1 ? totalStagger / children.length : 0;
-        const flightDur    = 1500;
-
-        container.style.overflow = "visible";
-        setTimeout(() => { container.style.overflow = "hidden"; }, totalStagger + flightDur + 300);
-
-        children.forEach((span, i) => {
-          const spanCX  = span.offsetLeft + span.offsetWidth  / 2;
-          const spanCY  = span.offsetTop  + span.offsetHeight / 2;
-          const absX    = (divRect.left - containerRect.left) + spanCX;
-          const absY    = (divRect.top  - containerRect.top ) + spanCY;
-          const centerX = cW / 2;
-          const centerY = cH / 2;
-          let dx = absX - centerX;
-          let dy = absY - centerY;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          dx = (dx / dist) * (dist + margin);
-          dy = (dy / dist) * (dist + margin);
-          const bt = span.style.transform || "";
-          
-          // Set base opacity to 1 so they remain visible after animation
-          span.style.opacity = "1";
-          
-          span.animate([
-            { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${bt}` },
-            { opacity: 1, transform: `translate(0px, 0px) ${bt}` },
-          ], { duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)", delay: i * staggerStep, fill: "backwards" });
-        });
-      } catch (err) {
-        children.forEach(s => { s.style.opacity = "1"; });
-        console.error("[WordCloud Shape] Animation error:", err);
-      }
-      return;
+      div.style.position     = "absolute";
+      div.style.left         = `${sl}px`;
+      div.style.top          = `${st}px`;
+      div.style.width        = `${sw}px`;
+      div.style.height       = `${sh}px`;
+      div.style.overflow     = "visible";
+      div.style.borderRadius = "0";
+      div.style.opacity      = "1";
     }
 
-    // Clear shape-cloud mask when in trophy mode
-    const div0 = htmlCloudRef.current;
-    if (div0) {
-      div0.style.webkitMaskImage = "";
-      div0.style.maskImage = "";
-    }
+    // ── FULL TROPHY (entire trophy silhouette filled with words) ──────────────
+    if (cloudMode === "full_trophy") {
+      // Use pre-loaded image (synchronous — no race condition)
+      const maskImg = imgRefs.current.fullTrophy;
+      if (!maskImg) return;
 
-    const useDOM = isIconic && !fillShape;
-    if (useDOM) {
-      const div = htmlCloudRef.current;
-      if (!div) return;
+      const PAD    = 10;
+      const availW = w - PAD * 2, availH = h - PAD * 2;
+      const aspect = maskImg.naturalWidth / maskImg.naturalHeight;
+      let sw = availW, sh = availW / aspect;
+      if (sh > availH) { sh = availH; sw = sh * aspect; }
+      sw = Math.round(sw); sh = Math.round(sh);
+      const sl = Math.round(PAD + (availW - sw) / 2);
+      const st = Math.round(PAD + (availH - sh) / 2);
+      divLeft = sl; divTop = st; divW = sw; divH = sh;
 
-      // Use a 3× larger rendering area than the thin golden ring so that
-      // wordcloud2 has enough room to actually place words. The div is still
-      // centred on the circle centre; CSS overflow:visible lets fly-in work.
-      const renderR = circleR * 3.2;  // e.g. 82px * 3.2 = ~263px radius
-      const size    = Math.round(renderR * 2);  // div side length
+      // ── Draw the trophy SILHOUETTE OUTLINE as a ghost on the canvas ──────────
+      // White areas of the mask = inside trophy → tint them golden and dim
+      // This shows the trophy outline immediately; words will fill it in
+      const silhouetteOff    = document.createElement("canvas");
+      silhouetteOff.width    = sw;
+      silhouetteOff.height   = sh;
+      const sCtx             = silhouetteOff.getContext("2d");
+      sCtx.drawImage(maskImg, 0, 0, sw, sh);
+      const sId = sCtx.getImageData(0, 0, sw, sh);
+      for (let i = 0; i < sId.data.length; i += 4) {
+        if (sId.data[i] > 128) {
+          // Inside trophy → golden glow outline
+          sId.data[i]   = 180; // R
+          sId.data[i+1] = 120; // G
+          sId.data[i+2] = 0;   // B
+          sId.data[i+3] = 55;  // alpha: very dim ghost
+        } else {
+          sId.data[i+3] = 0; // outside → fully transparent
+        }
+      }
+      sCtx.putImageData(sId, 0, 0);
+      // Draw the silhouette ghost onto the main canvas
+      ctx.drawImage(silhouetteOff, sl, st, sw, sh);
 
-      div.style.left     = `${circleCX - renderR}px`;
-      div.style.top      = `${circleCY - renderR}px`;
-      div.style.width    = `${size}px`;
-      div.style.height   = `${size}px`;
-      div.style.overflow = "visible";
-      div.innerHTML      = "";
+      const off = buildMaskCanvas(maskImg, sw, sh);
 
-      const maxVal  = processedWords[0]?.value || 1;
-      // Conservative font sizes so shrinkToFit doesn't need to work too hard
-      const minFont = Math.max(5, Math.round(size / 40));
-      const maxFont = Math.min(Math.round(size / 7), 28);
-      const list    = processedWords.map(({ text, value }) => [
-        text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
-      ]);
+      div.style.position     = "absolute";
+      div.style.left         = `${sl}px`;
+      div.style.top          = `${st}px`;
+      div.style.width        = `${sw}px`;
+      div.style.height       = `${sh}px`;
+      div.style.overflow     = "visible";
+      div.style.borderRadius = "0";
 
-      console.log(`[TrophyCloud] size=${size}px minFont=${minFont} maxFont=${maxFont} words=${processedWords.length}`);
+      const minFont = Math.max(7,  isFullscreen ? 10 : 7);
+      const maxFont = Math.min(isFullscreen ? 110 : 70, Math.round(sw / 5));
 
-      div.style.opacity = "0";
-
-      await new Promise((resolve) => {
-        let finished = false;
-        const onStopRender = () => { if (finished) return; finished = true; resolve(); };
-        div.addEventListener("wordcloudstop", onStopRender, { once: true });
-        WordCloud(div, {
-          list,
-          gridSize: Math.max(4, Math.round(size / 120)),
-          weightFactor: 1,
-          fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-          fontWeight: "700",
-          color: (_w, _wt, _fs, _d, theta) => colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
-          rotateRatio: 0,
+      await new Promise(resolve => {
+        let done = false;
+        const ok = () => { if (!done) { done = true; resolve(); } };
+        div.addEventListener("wordcloudstop", ok, { once: true });
+        WordCloud([off, div], {
+          list:            words.map(({ text, value }) => [text, value]),
+          gridSize:        Math.max(4, Math.round(sw / 80)),
+          weightFactor:    (s) => {
+            const mn = minFont, mx = maxFont;
+            return mn + Math.pow(Math.max(0.1, s / maxVal), 1.15) * (mx - mn);
+          },
+          fontFamily:      "Impact, 'Arial Black', sans-serif",
+          color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+          rotateRatio:     0,
+          rotationSteps:   1,
           backgroundColor: "transparent",
-          drawOutOfBound: true,
-          shrinkToFit: true,
-          minSize: minFont,
-          shuffle: true,
-          shape: "circle",
+          drawOutOfBound:  false,
+          shrinkToFit:     true,
+          clearCanvas:     false,
         });
-        setTimeout(onStopRender, 3000);
+        setTimeout(ok, 6000);
       });
 
-      if (currentGen !== drawGeneration.current) return;
+      if (gen !== genRef.current) return;
 
-      // Override wordcloud2.js position: relative
-      div.style.position = "absolute";
+      div.style.position     = "absolute";
+      div.style.left         = `${sl}px`;
+      div.style.top          = `${st}px`;
+      div.style.width        = `${sw}px`;
+      div.style.height       = `${sh}px`;
+      div.style.overflow     = "visible";
+      div.style.borderRadius = "0";
+      div.style.opacity      = "1";
+    }
 
-      await new Promise(r => requestAnimationFrame(r));
-      if (currentGen !== drawGeneration.current) return;
+    if (gen !== genRef.current) return;
 
-      const children = Array.from(div.children);
-      console.log(`[TrophyCloud] rendered ${children.length} word spans`);
+    // ── Save this render to cache ─────────────────────────────────────────────
+    saveToCache(cloudMode, cacheKey, divLeft, divTop, divW, divH);
 
-      div.style.opacity = "1";
+    // ── Animation ─────────────────────────────────────────────────────────────
+    await new Promise(r => requestAnimationFrame(r));
+    if (gen !== genRef.current) return;
 
-      if (children.length === 0) {
-        console.warn("[TrophyCloud] 0 words rendered — check font sizes vs div size.");
-        return;
-      }
+    const children = Array.from(div.children);
+    if (children.length === 0) return;
 
-      try {
-        const divRect       = div.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const cW = containerRect.width;
-        const cH = containerRect.height;
-        const margin = Math.max(cW, cH) * 0.7;
-        const totalStagger = Math.min(2000, children.length * 50);
-        const staggerStep  = children.length > 1 ? totalStagger / children.length : 0;
-        const flightDur    = 1400;
-
-        container.style.overflow = "visible";
-        setTimeout(() => { container.style.overflow = "hidden"; }, totalStagger + flightDur + 200);
-
-        children.forEach((span, i) => {
-          const spanCX  = span.offsetLeft + span.offsetWidth  / 2;
-          const spanCY  = span.offsetTop  + span.offsetHeight / 2;
-          const absX    = (divRect.left - containerRect.left) + spanCX;
-          const absY    = (divRect.top  - containerRect.top ) + spanCY;
-          const centerX = cW / 2;
-          const centerY = cH / 2;
-          let dx = absX - centerX;
-          let dy = absY - centerY;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          dx = (dx / dist) * (dist + margin);
-          dy = (dy / dist) * (dist + margin);
-          const baseTransform = span.style.transform || "";
-          
-          // Set base opacity to 1 so they remain visible after animation ends
-          span.style.opacity = "1";
-          
-          span.animate([
-            { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${baseTransform}` },
-            { opacity: 1, transform: `translate(0px, 0px) ${baseTransform}` },
-          ], {
-            duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-            delay: i * staggerStep, fill: "backwards",
-          });
-        });
-      } catch (err) {
-        children.forEach(span => { span.style.opacity = "1"; });
-        console.error("[TrophyCloud] Animation error:", err);
-      }
+    if (cloudMode === "full_trophy") {
+      // ── Piece-by-piece random pop-in: shuffle → staggered scale+fade ────────
+      const shuffled = shuffle(children);
+      // Start all invisible
+      shuffled.forEach(s => { s.style.opacity = "0"; s.style.transition = "none"; });
+      shuffled.forEach((span, i) => {
+        const baseTransform = (span.style.transform || "").replace(/scale\([^)]*\)/g, "").trim();
+        const tilt = Math.random() > 0.5 ? 12 : -12;
+        span.animate(
+          [
+            { opacity: 0, transform: `${baseTransform} scale(0) rotate(${tilt}deg)` },
+            { opacity: 1, transform: `${baseTransform} scale(1.12) rotate(0deg)`, offset: 0.65 },
+            { opacity: 1, transform: `${baseTransform} scale(1)    rotate(0deg)` },
+          ],
+          {
+            duration: 420,
+            easing:   "cubic-bezier(0.34,1.56,0.64,1)",
+            delay:    i * 75,
+            fill:     "both",
+          }
+        );
+        // Guarantee final resting state after animation
+        setTimeout(() => {
+          span.style.opacity   = "1";
+          span.style.transform = baseTransform;
+        }, i * 75 + 480);
+      });
     } else {
-      if (htmlCloudRef.current) htmlCloudRef.current.innerHTML = "";
-
-      const offDim = Math.round(circleR * 2) * 2;
-      const off    = document.createElement("canvas");
-      off.width    = offDim;
-      off.height   = offDim;
-      const offCtx = off.getContext("2d");
-
-      offCtx.fillStyle = "#fff";
-      offCtx.fillRect(0, 0, offDim, offDim);
-      offCtx.globalCompositeOperation = "destination-out";
-      offCtx.beginPath();
-      offCtx.arc(offDim / 2, offDim / 2, (offDim / 2) - 1, 0, Math.PI * 2);
-      offCtx.fill();
-      offCtx.globalCompositeOperation = "source-over";
-
-      const maxVal  = processedWords[0]?.value || 1;
-      const minFont = Math.max(4, Math.round(offDim / 60));
-      const maxFont = Math.min(Math.round(offDim / 3.5), 160);
-      const list    = processedWords.map(({ text, value }) => [
-        text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
-      ]);
-
-      await new Promise((resolve) => {
-        let finished = false;
-        const onStopRender = () => { if (finished) return; finished = true; resolve(); };
-        off.addEventListener("wordcloudstop", onStopRender, { once: true });
-        WordCloud(off, {
-          list,
-          gridSize: Math.max(2, Math.round(offDim / 300)),
-          weightFactor: 1,
-          fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-          fontWeight: "700",
-          color: (_w, _wt, _fs, _d, theta) => colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
-          rotateRatio: 0,
-          backgroundColor: "transparent",
-          clearCanvas: false,
-          drawOutOfBound: false,
-          shrinkToFit: true,
-          minSize: minFont,
-          shuffle: true,
-          shape: "circle",
+      // ── Trophy seal / Shape cloud: fly-in from edges ────────────────────────
+      const cRect = container.getBoundingClientRect();
+      const dRect = div.getBoundingClientRect();
+      try {
+        children.forEach(s => { s.style.opacity = "0"; });
+        children.forEach((span, i) => {
+          const cx = span.offsetLeft + span.offsetWidth  / 2;
+          const cy = span.offsetTop  + span.offsetHeight / 2;
+          const ax = (dRect.left - cRect.left) + cx;
+          const ay = (dRect.top  - cRect.top)  + cy;
+          let dx = ax - w / 2, dy = ay - h / 2;
+          const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+          dx = (dx / dist) * (dist + 400);
+          dy = (dy / dist) * (dist + 400);
+          const bt = span.style.transform || "";
+          span.style.opacity = "1";
+          span.animate(
+            [{ opacity:0, transform:`translate(${dx}px,${dy}px) ${bt}` }, { opacity:1, transform:`translate(0,0) ${bt}` }],
+            { duration:1400, easing:"cubic-bezier(0.16,1,0.3,1)", delay: i * 20, fill:"backwards" }
+          );
         });
-        setTimeout(onStopRender, 1200); 
-      });
-
-      if (currentGen !== drawGeneration.current) return;
-
-      const imgData = offCtx.getImageData(0, 0, offDim, offDim);
-      const data = imgData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] === 255 && data[i+1] === 255 && data[i+2] === 255) data[i+3] = 0; 
+      } catch (e) {
+        children.forEach(s => { s.style.opacity = "1"; });
       }
-      offCtx.putImageData(imgData, 0, 0);
-
-      ctx.drawImage(off, circleCX - circleR, circleCY - circleR, circleR * 2, circleR * 2);
     }
-  }, [JSON.stringify(words), theme, forwardedRef, isFullscreen, fillShape, cloudMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(words), theme, cloudMode, isFullscreen, fillShape, restoreFromCache, saveToCache]);
 
+  // ── Effect: fire on words change or mode switch ───────────────────────────
   useEffect(() => {
-    drawCloud();
+    if (!words || words.length === 0) return;
+    const t = setTimeout(() => drawCloud(), 400);
+    return () => clearTimeout(t);
   }, [drawCloud]);
+
+  // ── When words change, invalidate all mode caches ────────────────────────
+  useEffect(() => {
+    cache.current.trophy      = null;
+    cache.current.shape       = null;
+    cache.current.full_trophy = null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(words)]);
 
   const isIconic = theme === "iconic";
 
-    return (
-      <div
-        ref={containerRef}
-        className="wordcloud-wrapper"
-        style={{
-          position:     "relative",
-          width:        "100%",
-          aspectRatio:  isIconic && !isFullscreen ? "16 / 9" : (isFullscreen ? undefined : "1000 / 600"),
-          height:       isFullscreen ? "100vh" : undefined,
-          background:   isIconic ? "#1a0000" : "#fff",
-          margin:       "0 auto",
-          borderRadius: isIconic && !isFullscreen ? "8px" : undefined,
-          overflow:     "hidden",
-          display:      "flex",
-          alignItems:   "center",
-          justifyContent: "center",
-        }}
-      >
-        <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
-        <div ref={htmlCloudRef} style={{ position: "absolute", pointerEvents: "none" }} />
+  return (
+    <div
+      ref={containerRef}
+      className="wordcloud-wrapper"
+      style={{
+        position:       "relative",
+        width:          "100%",
+        aspectRatio:    isIconic && !isFullscreen ? "16 / 9" : (isFullscreen ? undefined : "1000 / 600"),
+        height:         isFullscreen ? "100vh" : undefined,
+        background:     isIconic ? "#1a0000" : "#fff",
+        margin:         "0 auto",
+        borderRadius:   isIconic && !isFullscreen ? "8px" : undefined,
+        overflow:       "hidden",
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "center",
+      }}
+    >
+      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
 
-        {/* Mode toggle — only shown for iconic theme */}
-        {isIconic && (
-          <div style={{
-            position: "absolute",
-            top: "0.75rem",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            background: "rgba(0,0,0,0.55)",
-            borderRadius: "20px",
-            padding: "3px",
-            gap: "2px",
-            backdropFilter: "blur(6px)",
-            border: "1px solid rgba(255,215,0,0.3)",
-            zIndex: 10,
-          }}>
-            {[
-              { key: "trophy", label: "🏆 Trophy View" },
-              { key: "shape",  label: "✨ Shape Cloud" },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setCloudMode(key)}
-                style={{
-                  background: cloudMode === key ? "#FFD700" : "transparent",
-                  color: cloudMode === key ? "#1a0000" : "rgba(255,215,0,0.7)",
-                  border: "none",
-                  borderRadius: "16px",
-                  padding: "5px 14px",
-                  cursor: "pointer",
-                  fontSize: "0.78rem",
-                  fontWeight: cloudMode === key ? 700 : 500,
-                  transition: "all 0.25s ease",
-                  whiteSpace: "nowrap",
-                  pointerEvents: "all",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-        
-        <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
+      {/* wordcloud2 places span elements here for iconic modes */}
+      <div
+        ref={htmlCloudRef}
+        style={{ position: "absolute", pointerEvents: "none", zIndex: 5, transition: "opacity 0.35s ease-in-out" }}
+      />
+
+      {/* Trophy / Shape toggle — iconic theme only */}
+      {isIconic && (
+        <div style={{
+          position:       "absolute",
+          top:            "0.75rem",
+          left:           "50%",
+          transform:      "translateX(-50%)",
+          display:        "flex",
+          background:     "rgba(0,0,0,0.6)",
+          borderRadius:   "24px",
+          padding:        "4px",
+          gap:            "2px",
+          backdropFilter: "blur(6px)",
+          border:         "1px solid rgba(255,215,0,0.3)",
+          zIndex:         20,
+        }}>
+          {[
+            { key: "trophy",      label: "🏆 Trophy View" },
+            { key: "shape",       label: "👑 Shape Cloud" },
+            { key: "full_trophy", label: "🌟 Full Trophy" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setCloudMode(key)}
+              style={{
+                background:   cloudMode === key ? "#FFD700" : "transparent",
+                color:        cloudMode === key ? "#1a0000" : "rgba(255,215,0,0.75)",
+                border:       "none",
+                borderRadius: "18px",
+                padding:      "5px 16px",
+                cursor:       "pointer",
+                fontSize:     "0.78rem",
+                fontWeight:   cloudMode === key ? 700 : 500,
+                transition:   "all 0.22s ease",
+                whiteSpace:   "nowrap",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Fullscreen / Stop controls */}
+      <div style={{ position: "absolute", bottom: "1rem", right: "1rem", zIndex: 20, display: "flex", gap: "0.5rem" }}>
         {isFullscreen && onStop && (
-          <button 
-            onClick={() => {
-              if (document.fullscreenElement) {
-                document.exitFullscreen().catch(err => console.error(err));
-              }
-              onStop();
-            }}
+          <button
+            onClick={e => { e.stopPropagation(); onStop(); }}
             style={{
-              background: "#DC2626",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              padding: "8px 16px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontWeight: 600,
-              fontSize: "0.85rem",
-              transition: "background 0.2s"
+              background: "rgba(220,38,38,0.85)", color: "#fff", border: "none",
+              borderRadius: "4px", padding: "8px 14px", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: "6px",
+              fontWeight: 600, fontSize: "0.85rem", transition: "background 0.2s",
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = "#B91C1C"}
-            onMouseLeave={(e) => e.currentTarget.style.background = "#DC2626"}
+            onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(220,38,38,0.85)"}
           >
             <StopCircle size={16} /> Stop Game
           </button>
         )}
-
-        <button 
+        <button
           onClick={toggleFullscreen}
           style={{
-            background: "rgba(0, 0, 0, 0.5)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            padding: "8px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "background 0.2s"
+            background: "rgba(0,0,0,0.5)", color: "#fff", border: "none",
+            borderRadius: "4px", padding: "8px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.2s",
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.8)"}
-          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.85)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
           title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
         >
           {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
@@ -650,4 +692,3 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     </div>
   );
 }
-

@@ -194,30 +194,53 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       const sealLeft = (w - sealWidth) / 2;
       const sealTop = (h - sealHeight) / 2;
 
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = sealWidth;
+      offCanvas.height = sealHeight;
+      const offCtx = offCanvas.getContext("2d");
+
+      // Load mask image
+      try {
+        const maskImg = await loadImage("/events_shape/crown_mask.jpg");
+        offCtx.drawImage(maskImg, 0, 0, sealWidth, sealHeight);
+        
+        // wordcloud2.js considers pixels that match backgroundColor as "empty" space.
+        // We will use backgroundColor: "transparent", so we need to make the crown interior transparent,
+        // and the exterior solid (so it's treated as blocked).
+        const imgData = offCtx.getImageData(0, 0, sealWidth, sealHeight);
+        for (let i = 0; i < imgData.data.length; i += 4) {
+          // In crown_mask.jpg, the crown is white (>128) and outside is black
+          if (imgData.data[i] > 128) {
+            imgData.data[i + 3] = 0; // Transparent -> inside the crown (allowed)
+          } else {
+            imgData.data[i] = 255;
+            imgData.data[i + 1] = 0;
+            imgData.data[i + 2] = 0;
+            imgData.data[i + 3] = 255; // Solid red -> outside the crown (blocked)
+          }
+        }
+        offCtx.putImageData(imgData, 0, 0);
+      } catch (err) {
+        console.warn("Failed to load crown mask for offscreen canvas", err);
+      }
+
       div.style.left   = `${sealLeft}px`;
       div.style.top    = `${sealTop}px`;
       div.style.width  = `${sealWidth}px`;
       div.style.height = `${sealHeight}px`;
       div.style.overflow = "visible";
-      // Mask clips the word cloud to the full silhouette
-      div.style.webkitMaskImage    = "url('/events_shape/crown_mask.jpg')";
-      div.style.maskImage          = "url('/events_shape/crown_mask.jpg')";
-      div.style.webkitMaskSize     = "contain";
-      div.style.maskSize           = "contain";
-      div.style.webkitMaskRepeat   = "no-repeat";
-      div.style.maskRepeat         = "no-repeat";
-      div.style.webkitMaskPosition = "center center";
-      div.style.maskPosition       = "center center";
-      div.style.webkitMaskMode     = "luminance";
-      div.style.maskMode           = "luminance";
+      
+      // Remove CSS masks entirely since layout engine will prevent cutoff!
+      div.style.webkitMaskImage = "";
+      div.style.maskImage       = "";
       div.innerHTML = "";
 
       const maxVal  = processedWords[0]?.value || 1;
-      // Font sizes relative to the seal div width — conservative so words fit
-      const minFont = Math.max(5, Math.round(sealWidth / 50));
-      const maxFont = Math.min(Math.round(sealWidth / 6), 55);
+      // Font sizes can be smaller to ensure fitting nicely in the detailed crown
+      const minFont = Math.max(3, Math.round(sealWidth / 70));
+      const maxFont = Math.min(Math.round(sealWidth / 7), 50);
       const list    = processedWords.map(({ text, value }) => [
-        text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
+        text, Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)),
       ]);
 
       div.style.opacity = "0";
@@ -226,9 +249,12 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         let done = false;
         const onDone = () => { if (done) return; done = true; resolve(); };
         div.addEventListener("wordcloudstop", onDone, { once: true });
-        WordCloud(div, {
+        
+        // Pass BOTH the offCanvas and the div. 
+        // offCanvas provides the layout mask, div receives the text spans.
+        WordCloud([offCanvas, div], {
           list,
-          gridSize: Math.max(4, Math.round(sealWidth / 120)),
+          gridSize: Math.max(2, Math.round(sealWidth / 150)),
           weightFactor: 1,
           fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
           fontWeight: "700",
@@ -236,7 +262,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
             colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
           rotateRatio: 0,
           backgroundColor: "transparent",
-          drawOutOfBound: true,
+          clearCanvas: false, // THIS IS THE MAGIC: uses existing canvas pixels as mask
+          drawOutOfBound: false, // Do not draw outside the allowed area
           shrinkToFit: true,
           minSize: minFont,
           shuffle: true,

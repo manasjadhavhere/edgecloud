@@ -164,11 +164,14 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           processedWords.push({ text: word, value: baseValue * 0.4 });
         });
       }
-      const fillerNeeded = 400 - processedWords.length;
+      // Increase filler words to ensure tight corners and spikes get densely packed
+      const fillerNeeded = 800 - processedWords.length;
       if (fillerNeeded > 0) {
         for (let i = 0; i < fillerNeeded; i++) {
           const si = Math.floor(Math.random() * processedWords.length);
-          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * 0.08 });
+          // Randomize the value of filler words slightly so they fill varying gap sizes
+          const sizeFactor = 0.04 + Math.random() * 0.06;
+          processedWords.push({ text: processedWords[si].text, value: processedWords[si].value * sizeFactor });
         }
       }
     }
@@ -236,8 +239,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       div.innerHTML = "";
 
       const maxVal  = processedWords[0]?.value || 1;
-      // Font sizes can be smaller to ensure fitting nicely in the detailed crown
-      const minFont = Math.max(3, Math.round(sealWidth / 70));
+      // Font sizes must be allowed to get extremely small (e.g. 4px) to fit in the narrow spikes
+      const minFont = 4;
       const maxFont = Math.min(Math.round(sealWidth / 7), 50);
       const list    = processedWords.map(({ text, value }) => [
         text, Math.round(minFont + ((value / maxVal) ** 1.2) * (maxFont - minFont)),
@@ -254,7 +257,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         // offCanvas provides the layout mask, div receives the text spans.
         WordCloud([offCanvas, div], {
           list,
-          gridSize: Math.max(2, Math.round(sealWidth / 150)),
+          // Smaller gridSize allows words to be packed more tightly, perfect for narrow spikes
+          gridSize: Math.max(2, Math.round(sealWidth / 250)),
           weightFactor: 1,
           fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
           fontWeight: "700",

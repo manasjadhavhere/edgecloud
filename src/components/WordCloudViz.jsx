@@ -37,6 +37,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
   const containerRef = useRef(null);
   const htmlCloudRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // "trophy" = existing golden-circle word cloud, "shape" = full wax-seal shape cloud
+  const [cloudMode, setCloudMode] = useState("trophy");
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -140,7 +142,6 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       tW = w; tH = w / trophyAspect; tX = 0; tY = (h - tH) / 2;
     }
 
-    const useDOM = isIconic && !fillShape;
     const circleCX = tX + tW * 0.492;
     const circleCY = tY + tH * 0.344;
     const circleR  = tW * 0.086;
@@ -151,7 +152,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     if (trophyImg) ctx.drawImage(trophyImg, tX, tY, tW, tH);
 
     let processedWords = [...words];
-    if (fillShape && processedWords.length > 0) {
+    // Always seed with brand words in shape mode; only when fillShape for trophy mode
+    if ((fillShape || cloudMode === "shape") && processedWords.length > 0) {
       if (processedWords.length < 30) {
         const baseValue = processedWords[0].value;
         iconicBrandWords.forEach(word => {
@@ -169,6 +171,119 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
     if (processedWords.length === 0) return;
 
+    // ── SHAPE CLOUD MODE ────────────────────────────────────────
+    if (cloudMode === "shape") {
+      const div = htmlCloudRef.current;
+      if (!div) return;
+
+      // Cover full canvas; CSS mask clips to wax seal silhouette
+      div.style.left   = "0px";
+      div.style.top    = "0px";
+      div.style.width  = `${w}px`;
+      div.style.height = `${h}px`;
+      div.style.overflow = "visible";
+      div.style.webkitMaskImage  = "url('/events_shape/iconic_shape_mask.jpg')";
+      div.style.maskImage        = "url('/events_shape/iconic_shape_mask.jpg')";
+      div.style.webkitMaskSize   = "60% auto";
+      div.style.maskSize         = "60% auto";
+      div.style.webkitMaskRepeat = "no-repeat";
+      div.style.maskRepeat       = "no-repeat";
+      div.style.webkitMaskPosition = "center 38%";
+      div.style.maskPosition       = "center 38%";
+      div.style.webkitMaskMode   = "luminance";
+      div.style.maskMode         = "luminance";
+      div.innerHTML = "";
+
+      const maxVal   = processedWords[0]?.value || 1;
+      const minFont  = Math.max(5, Math.round(w / 80));
+      const maxFont  = Math.min(Math.round(w / 8), 120);
+      const list     = processedWords.map(({ text, value }) => [
+        text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont)),
+      ]);
+
+      div.style.opacity = "0";
+
+      await new Promise(resolve => {
+        let done = false;
+        const onDone = () => { if (done) return; done = true; resolve(); };
+        div.addEventListener("wordcloudstop", onDone, { once: true });
+        WordCloud(div, {
+          list,
+          gridSize: Math.max(2, Math.round(w / 300)),
+          weightFactor: 1,
+          fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+          fontWeight: "700",
+          color: (_w, _wt, _fs, _d, theta) =>
+            colors[Math.abs(Math.floor((theta / (2 * Math.PI)) * colors.length)) % colors.length],
+          rotateRatio: 0,
+          backgroundColor: "transparent",
+          drawOutOfBound: false,
+          shrinkToFit: true,
+          minSize: minFont,
+          shuffle: true,
+          shape: "circle",
+        });
+        setTimeout(onDone, 2000);
+      });
+
+      await new Promise(r => requestAnimationFrame(r));
+
+      const children = Array.from(div.children);
+      children.forEach(s => { s.style.opacity = "0"; });
+      div.style.opacity = "1";
+
+      if (children.length === 0) {
+        console.warn("[WordCloud Shape] 0 words rendered.");
+        return;
+      }
+
+      // Fly-in animation — same radial swarm from outer edges
+      try {
+        const divRect       = div.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const cW = containerRect.width;
+        const cH = containerRect.height;
+        const margin = Math.max(cW, cH) * 0.75;
+        const totalStagger = Math.min(2400, children.length * 50);
+        const staggerStep  = children.length > 1 ? totalStagger / children.length : 0;
+        const flightDur    = 1500;
+
+        container.style.overflow = "visible";
+        setTimeout(() => { container.style.overflow = "hidden"; }, totalStagger + flightDur + 300);
+
+        children.forEach((span, i) => {
+          const spanCX = span.offsetLeft + span.offsetWidth  / 2;
+          const spanCY = span.offsetTop  + span.offsetHeight / 2;
+          const absX   = (divRect.left - containerRect.left) + spanCX;
+          const absY   = (divRect.top  - containerRect.top ) + spanCY;
+          const centerX = cW / 2;
+          const centerY = cH / 2;
+          let dx = absX - centerX;
+          let dy = absY - centerY;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          dx = (dx / dist) * (dist + margin);
+          dy = (dy / dist) * (dist + margin);
+          const bt = span.style.transform || "";
+          span.animate([
+            { opacity: 0, transform: `translate(${dx}px, ${dy}px) ${bt}` },
+            { opacity: 1, transform: `translate(0px, 0px) ${bt}` },
+          ], { duration: flightDur, easing: "cubic-bezier(0.16, 1, 0.3, 1)", delay: i * staggerStep, fill: "both" });
+        });
+      } catch (err) {
+        children.forEach(s => { s.style.opacity = "1"; });
+        console.error("[WordCloud Shape] Animation error:", err);
+      }
+      return;
+    }
+
+    // Clear shape-cloud mask when in trophy mode
+    const div0 = htmlCloudRef.current;
+    if (div0) {
+      div0.style.webkitMaskImage = "";
+      div0.style.maskImage = "";
+    }
+
+    const useDOM = isIconic && !fillShape;
     if (useDOM) {
       const div = htmlCloudRef.current;
       if (!div) return;
@@ -344,7 +459,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
       ctx.drawImage(off, circleCX - circleR, circleCY - circleR, circleR * 2, circleR * 2);
     }
-  }, [JSON.stringify(words), theme, forwardedRef, isFullscreen, fillShape]);
+  }, [JSON.stringify(words), theme, forwardedRef, isFullscreen, fillShape, cloudMode]);
 
   useEffect(() => {
     drawCloud();
@@ -372,6 +487,49 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       >
         <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
         <div ref={htmlCloudRef} style={{ position: "absolute", pointerEvents: "none" }} />
+
+        {/* Mode toggle — only shown for iconic theme */}
+        {isIconic && (
+          <div style={{
+            position: "absolute",
+            top: "0.75rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            background: "rgba(0,0,0,0.55)",
+            borderRadius: "20px",
+            padding: "3px",
+            gap: "2px",
+            backdropFilter: "blur(6px)",
+            border: "1px solid rgba(255,215,0,0.3)",
+            zIndex: 10,
+          }}>
+            {[
+              { key: "trophy", label: "🏆 Trophy View" },
+              { key: "shape",  label: "✨ Shape Cloud" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setCloudMode(key)}
+                style={{
+                  background: cloudMode === key ? "#FFD700" : "transparent",
+                  color: cloudMode === key ? "#1a0000" : "rgba(255,215,0,0.7)",
+                  border: "none",
+                  borderRadius: "16px",
+                  padding: "5px 14px",
+                  cursor: "pointer",
+                  fontSize: "0.78rem",
+                  fontWeight: cloudMode === key ? 700 : 500,
+                  transition: "all 0.25s ease",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "all",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         
         <div style={{ position: "absolute", top: "1rem", right: "1rem", display: "flex", gap: "0.5rem" }}>
         {isFullscreen && onStop && (

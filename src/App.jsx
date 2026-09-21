@@ -7,6 +7,8 @@ import Host    from "./pages/Host";
 import Join    from "./pages/Join";
 import Results from "./pages/Results";
 
+import LiveResults from "./pages/LiveResults";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -17,6 +19,7 @@ export default function App() {
         <Route path="/host"              element={<Host />} />
         <Route path="/join/:gameId"      element={<Join />} />
         <Route path="/results/:gameId"   element={<Results />} />
+        <Route path="/live_results/:gameId" element={<LiveResults />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

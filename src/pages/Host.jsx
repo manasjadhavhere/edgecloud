@@ -236,31 +236,6 @@ export default function Host() {
     }
   }
 
-  async function handleEnd() {
-    if (!gameId) return;
-
-    // Capture the current word cloud canvas as a base64 image before ending
-    let finalCloudImage = null;
-    try {
-      const canvas = cloudCanvasRef.current;
-      if (canvas && canvas.width > 0 && canvas.height > 0) {
-        finalCloudImage = canvas.toDataURL("image/png");
-      }
-    } catch (e) {
-      console.warn("Could not capture word cloud canvas:", e);
-    }
-
-    const updates = {
-      status:   "ended",
-      endedAt:  Date.now(),
-      ...(finalCloudImage ? { finalCloudImage } : {}),
-    };
-
-    await update(ref(db, `games/${gameId}`), updates);
-    await set(ref(db, "activeGame"), null);
-    navigate(`/results/${gameId}`, { state: { eventId } });
-  }
-
   return (
     <div className="admin-layout">
       <BgGrid />
@@ -300,6 +275,17 @@ export default function Host() {
                 <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
                   {responses.length} response{responses.length !== 1 ? "s" : ""}
                 </p>
+                <div style={{ marginTop: "1rem" }}>
+                  <a 
+                    href={`/live_results/${gameId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline btn-sm"
+                    style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", fontSize: "0.75rem", padding: "0.4rem", color: "var(--text)", borderColor: "var(--border-strong)", textDecoration: "none" }}
+                  >
+                    <Eye size={14} /> See live results
+                  </a>
+                </div>
               </div>
             </div>
           )}
@@ -423,22 +409,11 @@ export default function Host() {
                 <div className="card" style={{ minHeight: 400 }}>
                   <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Live Word Cloud</p>
                   <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", minHeight: 320, overflow: "hidden" }}>
-                    {responses.length > 0 ? (
-                      <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} forwardedRef={cloudCanvasRef} onStop={handleEnd} />
-                    ) : (
-                      <div style={{ display: "flex", height: 320, alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "0.75rem", color: "var(--text-muted)" }}>
-                        <div className="spinner" />
-                        <span style={{ fontSize: "0.85rem" }}>Waiting for first responses…</span>
-                      </div>
-                    )}
+                    <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} forwardedRef={cloudCanvasRef} />
                   </div>
                 </div>
-
-                {/* End game */}
-                <button className="btn btn-danger btn-lg" style={{ width: "100%" }} onClick={handleEnd}>
-                  <StopCircle size={18} /> Stop Game & Reveal Results
-                </button>
               </div>
+
 
               {/* Right */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", position: "sticky", top: "2rem" }}>

@@ -65,12 +65,20 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
   const htmlCloudRef = useRef(null);
+  const activeTempDivRef = useRef(null);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cloudMode, setCloudMode]       = useState("trophy"); // "trophy" | "shape" | "full_trophy"
 
   // Generation counter — increment aborts any stale async draw
   const genRef = useRef(0);
+  const wordsRef = useRef(words);
+  const isDrawingRef = useRef(false);
+  const pendingDrawRef = useRef(false);
+
+  useEffect(() => {
+    wordsRef.current = words;
+  }, [words]);
 
   /**
    * Pre-loaded images — loaded once at mount so drawCloud never awaits images
@@ -78,12 +86,17 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
    */
   const imgRefs = useRef({ trophy: null, crown: null, fullTrophy: null });
 
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
   useEffect(() => {
     // Pre-load all iconic-theme images at mount
     const load = (src, key) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload  = () => { imgRefs.current[key] = img; };
+      img.onload  = () => { 
+        imgRefs.current[key] = img; 
+        if (key === "trophy") setImagesLoaded(true);
+      };
       img.onerror = () => console.warn("[WordCloud] preload failed:", src);
       img.src = src;
     };
@@ -91,6 +104,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     load("/events_shape/crown_mask.jpg",          "crown");
     load("/events_shape/iconic_full_trophy_mask.jpg", "fullTrophy");
   }, []);
+
+
 
   /**
    * Per-mode render cache.
@@ -160,23 +175,41 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
   // ─── Core draw function ────────────────────────────────────────────────────
   const drawCloud = useCallback(async () => {
-    if (!words || words.length === 0) return;
+    const currentWords = wordsRef.current || [];
 
-    const cacheKey = JSON.stringify(words) + "|" + isFullscreen;
-
-    // ── Cache hit: same words, same fullscreen, switching mode back → restore ──
-    const hit = cache.current[cloudMode];
-    if (hit && hit.cacheKey === cacheKey) {
-      restoreFromCache(hit);
+    if (isDrawingRef.current) {
+      pendingDrawRef.current = true;
       return;
     }
+    isDrawingRef.current = true;
+    pendingDrawRef.current = false;
 
-    // ── Cache miss: full re-render ────────────────────────────────────────────
-    const gen       = ++genRef.current;
+    try {
+      const cacheKey = JSON.stringify(currentWords) + "|" + isFullscreen;
+
+      // ── Cache hit: same words, same fullscreen, switching mode back → restore ──
+      const hit = cache.current[cloudMode];
+      if (hit && hit.cacheKey === cacheKey && currentWords.length > 0) {
+        restoreFromCache(hit);
+        return;
+      }
+
+      // ── Cache miss: full re-render ────────────────────────────────────────────
+      const gen       = ++genRef.current;
     const container = containerRef.current;
     const canvas    = canvasRef.current;
     const div       = htmlCloudRef.current;
     if (!container || !canvas || !div) return;
+
+    // Abort any currently running wordcloud2 layout loops to free CPU
+    canvas.dispatchEvent(new Event("wordcloudabort"));
+    if (activeTempDivRef.current) {
+      activeTempDivRef.current.dispatchEvent(new Event("wordcloudabort"));
+      if (activeTempDivRef.current.parentNode) {
+        activeTempDivRef.current.parentNode.removeChild(activeTempDivRef.current);
+      }
+      activeTempDivRef.current = null;
+    }
 
     // Wait for layout to give real dimensions
     let w = container.clientWidth, h = container.clientHeight;
@@ -215,30 +248,34 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         ctx.putImageData(id, 0, 0);
       }
 
-      const maxVal  = Math.max(...words.map(w => w.value), 1);
+      const maxVal  = Math.max(...currentWords.map(w => w.value), 1);
       const minFont = Math.max(10, Math.round(w / 40));
       const maxFont = Math.min(Math.round(w / 6), 140);
 
-      await new Promise(resolve => {
-        let done = false;
-        const ok = () => { if (!done) { done = true; resolve(); } };
-        canvas.addEventListener("wordcloudstop", ok, { once: true });
-        WordCloud(canvas, {
-          list:            words.map(({ text, value }) => [text, Math.round(minFont + ((value/maxVal) ** 1.1) * (maxFont - minFont))]),
-          gridSize:        Math.max(6, Math.round(w / 120)),
-          weightFactor:    1,
-          fontFamily:      "'Segoe UI', Arial, sans-serif",
-          fontWeight:      "700",
-          color:           (_w, _wt, _fs, _d, theta) => colors[Math.abs(Math.floor((theta/(2*Math.PI))*colors.length)) % colors.length],
-          rotateRatio:     0,
-          backgroundColor: "transparent",
-          clearCanvas:     false,
-          drawOutOfBound:  false,
-          shrinkToFit:     true,
-          shuffle:         true,
+      if (currentWords.length > 0) {
+        await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if (!done) { done = true; resolve(); } };
+          canvas.addEventListener("wordcloudstop", ok, { once: true });
+          WordCloud(canvas, {
+            list:            currentWords.map(({ text, value }) => [text, Math.round(minFont + ((value/maxVal) ** 1.1) * (maxFont - minFont))]),
+            gridSize:        Math.max(6, Math.round(w / 90)),
+            weightFactor:    1,
+            fontFamily:      "'Segoe UI', Arial, sans-serif",
+            fontWeight:      "700",
+            color:           (_w, _wt, _fs, _d, theta) => colors[Math.abs(Math.floor((theta/(2*Math.PI))*colors.length)) % colors.length],
+            rotateRatio:     0,
+            backgroundColor: "transparent",
+            clearCanvas:     false,
+            drawOutOfBound:  false,
+            shrinkToFit:     true,
+            shuffle:         true,
+            wait:            2,
+            abortThreshold:  20,
+          });
+          setTimeout(ok, 10000);
         });
-        setTimeout(ok, 5000);
-      });
+      }
       return;
     }
 
@@ -251,11 +288,18 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     ctx.fillStyle = "#1a0000";
     ctx.fillRect(0, 0, w, h);
 
-    div.innerHTML = "";
-    div.style.opacity = "0";
-
-    const maxVal = Math.max(...words.map(w => w.value), 1);
+    const sortedWords = [...currentWords].sort((a, b) => b.value - a.value);
+    const displayWords = sortedWords.slice(0, 200); // 200 is optimal for density vs speed
+    const maxVal = Math.max(...displayWords.map(w => w.value), 1);
     let divLeft = 0, divTop = 0, divW = 0, divH = 0;
+
+    const tempDiv = document.createElement("div");
+    tempDiv.style.position = "absolute";
+    tempDiv.style.visibility = "hidden";
+    tempDiv.style.pointerEvents = "none";
+    tempDiv.style.zIndex = "5";
+    container.appendChild(tempDiv);
+    activeTempDivRef.current = tempDiv;
 
     // ── TROPHY VIEW ───────────────────────────────────────────────────────────
     if (cloudMode === "trophy") {
@@ -269,10 +313,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         else                  { tW = w; tH = w / tAspect; tX = 0; tY = (h - tH) / 2; }
         ctx.drawImage(trophy, tX, tY, tW, tH);
 
-        // Golden seal position
-        const cX = tX + tW * 0.492;
-        const cY = tY + tH * 0.344;
-        const cR = tW * 0.086;
+        // Golden seal position (centered for new background)
+        const cX = tX + tW * 0.50;
+        const cY = tY + tH * 0.50;
+        const cR = tH * 0.25;
 
         // Render area = exactly the seal circle (diameter = 2*cR)
         const size = Math.round(cR * 2);
@@ -306,49 +350,42 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         }
         maskOffCtx.putImageData(maskId, 0, 0);
 
-        div.style.position = "absolute";
-        div.style.left   = `${divLeft}px`;
-        div.style.top    = `${divTop}px`;
-        div.style.width  = `${divW}px`;
-        div.style.height = `${divH}px`;
-        div.style.overflow = "hidden";
-        div.style.borderRadius = "50%";
+        tempDiv.style.left = `${divLeft}px`;
+        tempDiv.style.top = `${divTop}px`;
+        tempDiv.style.width = `${divW}px`;
+        tempDiv.style.height = `${divH}px`;
+        tempDiv.style.overflow = "hidden";
+        tempDiv.style.borderRadius = "50%";
 
-        const minFont = Math.max(5, isFullscreen ? 8 : 5);
-        const maxFont = Math.min(isFullscreen ? 80 : 45, Math.round(size / 4));
+        const minFont = Math.max(3, isFullscreen ? 6 : 3);
+        const maxFont = Math.min(isFullscreen ? 90 : 55, Math.round(size / 3.5));
 
-        await new Promise(resolve => {
-          let done = false;
-          const ok = () => { if (!done) { done = true; resolve(); } };
-          div.addEventListener("wordcloudstop", ok, { once: true });
-          WordCloud([maskOff, div], {
-            list:            words.map(({ text, value }) => [text, value]),
-            gridSize:        Math.max(4, Math.round(size / 60)),
-            weightFactor:    (s) => {
-              return minFont + Math.pow(Math.max(0.1, s / maxVal), 1.1) * (maxFont - minFont);
-            },
-            fontFamily:      "Impact, 'Arial Black', sans-serif",
-            color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
-            rotateRatio:     0,
-            backgroundColor: "transparent",
-            drawOutOfBound:  false,
-            shrinkToFit:     true,
-            clearCanvas:     false,
+        if (currentWords.length > 0) {
+          await new Promise(resolve => {
+            let done = false;
+            const ok = () => { if (!done) { done = true; resolve(); } };
+            tempDiv.addEventListener("wordcloudstop", ok, { once: true });
+            WordCloud([maskOff, tempDiv], {
+              list:            displayWords.map(({ text, value }) => [text, value]),
+              gridSize:        Math.max(4, Math.round(size / 80)),
+              weightFactor:    (s) => {
+                return minFont + Math.pow(Math.max(0.01, s / maxVal), 1.1) * (maxFont - minFont);
+              },
+              fontFamily:      "Impact, 'Arial Black', sans-serif",
+              color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+              rotateRatio:     0,
+              backgroundColor: "transparent",
+              drawOutOfBound:  false,
+              shrinkToFit:     true,
+              clearCanvas:     false,
+              wait:            2,
+              abortThreshold:  30,
+            });
+            setTimeout(ok, 8000); // Increased timeout to 8s since it's hidden now
           });
-          setTimeout(ok, 4000);
-        });
+        }
 
         if (gen !== genRef.current) return;
-
-        // ⚠️ wordcloud2 forces position:relative — reset back to absolute
-        div.style.position   = "absolute";
-        div.style.left       = `${divLeft}px`;
-        div.style.top        = `${divTop}px`;
-        div.style.width      = `${divW}px`;
-        div.style.height     = `${divH}px`;
-        div.style.overflow   = "hidden";
-        div.style.borderRadius = "50%";
-        div.style.opacity    = "1";
       }
     }
 
@@ -370,49 +407,43 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
       const off = buildMaskCanvas(maskImg, sw, sh);
 
-      div.style.position     = "absolute";
-      div.style.left         = `${sl}px`;
-      div.style.top          = `${st}px`;
-      div.style.width        = `${sw}px`;
-      div.style.height       = `${sh}px`;
-      div.style.overflow     = "visible";
-      div.style.borderRadius = "0";
+      tempDiv.style.left = `${sl}px`;
+      tempDiv.style.top = `${st}px`;
+      tempDiv.style.width = `${sw}px`;
+      tempDiv.style.height = `${sh}px`;
+      tempDiv.style.overflow = "visible";
+      tempDiv.style.borderRadius = "0";
 
       const minFont = Math.max(4, isFullscreen ? 6 : 4);
       const maxFont = Math.min(isFullscreen ? 90 : 60, Math.round(sw / 6));
 
-      await new Promise(resolve => {
-        let done = false;
-        const ok = () => { if (!done) { done = true; resolve(); } };
-        div.addEventListener("wordcloudstop", ok, { once: true });
-        WordCloud([off, div], {
-          list:            words.map(({ text, value }) => [text, value]),
-          gridSize:        Math.max(3, Math.round(sw / 100)),
-          weightFactor:    (size) => {
-            return minFont + Math.pow(Math.max(0.1, size / maxVal), 1.2) * (maxFont - minFont);
-          },
-          fontFamily:      "Impact, 'Arial Black', sans-serif",
-          color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
-          rotateRatio:     0.4,      // allow some vertical words to fill the tall crown spikes
-          rotationSteps:   2,
-          backgroundColor: "transparent",
-          drawOutOfBound:  false,
-          shrinkToFit:     true,
-          clearCanvas:     false,
+      if (currentWords.length > 0) {
+        await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if (!done) { done = true; resolve(); } };
+          tempDiv.addEventListener("wordcloudstop", ok, { once: true });
+          WordCloud([off, tempDiv], {
+            list:            currentWords.map(({ text, value }) => [text, value]),
+            gridSize:        Math.max(5, Math.round(sw / 80)),
+            weightFactor:    (size) => {
+              return minFont + Math.pow(Math.max(0.1, size / maxVal), 1.2) * (maxFont - minFont);
+            },
+            fontFamily:      "Impact, 'Arial Black', sans-serif",
+            color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+            rotateRatio:     0.4,      // allow some vertical words to fill the tall crown spikes
+            rotationSteps:   2,
+            backgroundColor: "transparent",
+            drawOutOfBound:  false,
+            shrinkToFit:     true,
+            clearCanvas:     false,
+            wait:            2,
+            abortThreshold:  30,
+          });
+          setTimeout(ok, 10000); // Increased timeout to 10s
         });
-        setTimeout(ok, 4000);
-      });
+      }
 
       if (gen !== genRef.current) return;
-
-      div.style.position     = "absolute";
-      div.style.left         = `${sl}px`;
-      div.style.top          = `${st}px`;
-      div.style.width        = `${sw}px`;
-      div.style.height       = `${sh}px`;
-      div.style.overflow     = "visible";
-      div.style.borderRadius = "0";
-      div.style.opacity      = "1";
     }
 
     // ── FULL TROPHY (entire trophy silhouette filled with words) ──────────────
@@ -457,53 +488,61 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
       const off = buildMaskCanvas(maskImg, sw, sh);
 
-      div.style.position     = "absolute";
-      div.style.left         = `${sl}px`;
-      div.style.top          = `${st}px`;
-      div.style.width        = `${sw}px`;
-      div.style.height       = `${sh}px`;
-      div.style.overflow     = "visible";
-      div.style.borderRadius = "0";
+      tempDiv.style.left = `${sl}px`;
+      tempDiv.style.top = `${st}px`;
+      tempDiv.style.width = `${sw}px`;
+      tempDiv.style.height = `${sh}px`;
+      tempDiv.style.overflow = "visible";
+      tempDiv.style.borderRadius = "0";
 
       const minFont = Math.max(7,  isFullscreen ? 10 : 7);
       const maxFont = Math.min(isFullscreen ? 110 : 70, Math.round(sw / 5));
 
-      await new Promise(resolve => {
-        let done = false;
-        const ok = () => { if (!done) { done = true; resolve(); } };
-        div.addEventListener("wordcloudstop", ok, { once: true });
-        WordCloud([off, div], {
-          list:            words.map(({ text, value }) => [text, value]),
-          gridSize:        Math.max(4, Math.round(sw / 80)),
-          weightFactor:    (s) => {
-            const mn = minFont, mx = maxFont;
-            return mn + Math.pow(Math.max(0.1, s / maxVal), 1.15) * (mx - mn);
-          },
-          fontFamily:      "Impact, 'Arial Black', sans-serif",
-          color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
-          rotateRatio:     0,
-          rotationSteps:   1,
-          backgroundColor: "transparent",
-          drawOutOfBound:  false,
-          shrinkToFit:     true,
-          clearCanvas:     false,
+      if (currentWords.length > 0) {
+        await new Promise(resolve => {
+          let done = false;
+          const ok = () => { if (!done) { done = true; resolve(); } };
+          tempDiv.addEventListener("wordcloudstop", ok, { once: true });
+          WordCloud([off, tempDiv], {
+            list:            currentWords.map(({ text, value }) => [text, value]),
+            gridSize:        Math.max(6, Math.round(sw / 70)),
+            weightFactor:    (s) => {
+              const mn = minFont, mx = maxFont;
+              return mn + Math.pow(Math.max(0.1, s / maxVal), 1.15) * (mx - mn);
+            },
+            fontFamily:      "Impact, 'Arial Black', sans-serif",
+            color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+            rotateRatio:     0,
+            rotationSteps:   1,
+            backgroundColor: "transparent",
+            drawOutOfBound:  false,
+            shrinkToFit:     true,
+            clearCanvas:     false,
+            wait:            2,
+            abortThreshold:  30,
+          });
+          setTimeout(ok, 12000); // Increased timeout to 12s
         });
-        setTimeout(ok, 6000);
-      });
+      }
 
       if (gen !== genRef.current) return;
-
-      div.style.position     = "absolute";
-      div.style.left         = `${sl}px`;
-      div.style.top          = `${st}px`;
-      div.style.width        = `${sw}px`;
-      div.style.height       = `${sh}px`;
-      div.style.overflow     = "visible";
-      div.style.borderRadius = "0";
-      div.style.opacity      = "1";
     }
 
     if (gen !== genRef.current) return;
+
+    // ── Perform the double-buffer swap! ───────────────────────────────────────
+    div.style.position = "absolute";
+    div.style.left = tempDiv.style.left;
+    div.style.top = tempDiv.style.top;
+    div.style.width = tempDiv.style.width;
+    div.style.height = tempDiv.style.height;
+    div.style.overflow = tempDiv.style.overflow;
+    div.style.borderRadius = tempDiv.style.borderRadius;
+    div.innerHTML = tempDiv.innerHTML;
+    div.style.opacity = "1";
+
+    if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+    activeTempDivRef.current = null;
 
     // ── Save this render to cache ─────────────────────────────────────────────
     saveToCache(cloudMode, cacheKey, divLeft, divTop, divW, divH);
@@ -561,22 +600,31 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
           span.style.opacity = "1";
           span.animate(
             [{ opacity:0, transform:`translate(${dx}px,${dy}px) ${bt}` }, { opacity:1, transform:`translate(0,0) ${bt}` }],
-            { duration:1400, easing:"cubic-bezier(0.16,1,0.3,1)", delay: i * 20, fill:"backwards" }
+            { duration:1000, easing:"cubic-bezier(0.16,1,0.3,1)", delay: i * 8, fill:"backwards" }
           );
         });
       } catch (e) {
         children.forEach(s => { s.style.opacity = "1"; });
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(words), theme, cloudMode, isFullscreen, fillShape, restoreFromCache, saveToCache]);
+    } finally {
+      isDrawingRef.current = false;
+      if (pendingDrawRef.current) {
+        setTimeout(drawCloud, 50);
+      }
+    }
+  }, [theme, cloudMode, isFullscreen, fillShape, restoreFromCache, saveToCache]);
 
-  // ── Effect: fire on words change or mode switch ───────────────────────────
   useEffect(() => {
     if (!words || words.length === 0) return;
-    const t = setTimeout(() => drawCloud(), 400);
-    return () => clearTimeout(t);
-  }, [drawCloud]);
+    drawCloud();
+  }, [words, drawCloud]);
+
+  useEffect(() => {
+    if (imagesLoaded) {
+      drawCloud();
+    }
+  }, [imagesLoaded, drawCloud]);
 
   // ── When words change, invalidate all mode caches ────────────────────────
   useEffect(() => {
@@ -614,48 +662,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
         style={{ position: "absolute", pointerEvents: "none", zIndex: 5, transition: "opacity 0.35s ease-in-out" }}
       />
 
-      {/* Trophy / Shape toggle — iconic theme only */}
-      {isIconic && (
-        <div style={{
-          position:       "absolute",
-          top:            "0.75rem",
-          left:           "50%",
-          transform:      "translateX(-50%)",
-          display:        "flex",
-          background:     "rgba(0,0,0,0.6)",
-          borderRadius:   "24px",
-          padding:        "4px",
-          gap:            "2px",
-          backdropFilter: "blur(6px)",
-          border:         "1px solid rgba(255,215,0,0.3)",
-          zIndex:         20,
-        }}>
-          {[
-            { key: "trophy",      label: "🏆 Trophy View" },
-            { key: "shape",       label: "👑 Shape Cloud" },
-            { key: "full_trophy", label: "🌟 Full Trophy" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setCloudMode(key)}
-              style={{
-                background:   cloudMode === key ? "#FFD700" : "transparent",
-                color:        cloudMode === key ? "#1a0000" : "rgba(255,215,0,0.75)",
-                border:       "none",
-                borderRadius: "18px",
-                padding:      "5px 16px",
-                cursor:       "pointer",
-                fontSize:     "0.78rem",
-                fontWeight:   cloudMode === key ? 700 : 500,
-                transition:   "all 0.22s ease",
-                whiteSpace:   "nowrap",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Trophy / Shape toggle — removed per user request */}
 
       {/* Fullscreen / Stop controls */}
       <div style={{ position: "absolute", bottom: "1rem", right: "1rem", zIndex: 20, display: "flex", gap: "0.5rem" }}>

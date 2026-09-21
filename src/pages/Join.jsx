@@ -171,7 +171,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
   );
 }
 
-function ThankYouScreen({ eventId }) {
+function ThankYouScreen({ eventId, onPlayAgain }) {
   const event = EVENTS[eventId];
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
@@ -187,9 +187,9 @@ function ThankYouScreen({ eventId }) {
         <button 
           className="btn btn-outline" 
           style={{ width: "100%", borderRadius: "2px" }}
-          onClick={() => window.location.href = "/"}
+          onClick={onPlayAgain}
         >
-          Back to Home Page
+          Play Again
         </button>
       </div>
     </div>
@@ -232,7 +232,7 @@ export default function Join() {
   }
 
   if (!participantName) return <NameEntry onSubmit={handleNameSubmit} eventId={game?.eventId} />;
-  if (submitted)        return <ThankYouScreen eventId={game?.eventId} />;
+  if (submitted)        return <ThankYouScreen eventId={game?.eventId} onPlayAgain={() => { setParticipantName(null); setSubmitted(false); }} />;
 
   return (
     <AnswerForm

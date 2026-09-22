@@ -86,7 +86,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
    */
   const imgRefs = useRef({ trophy: null, trophyEvent: null, crown: null, fullTrophy: null });
 
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(0);
 
   useEffect(() => {
     // Pre-load all iconic-theme images at mount
@@ -95,7 +95,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
       img.crossOrigin = "anonymous";
       img.onload  = () => { 
         imgRefs.current[key] = img; 
-        if (key === "trophy") setImagesLoaded(true);
+        setImagesLoaded(prev => prev + 1);
       };
       img.onerror = () => console.warn("[WordCloud] preload failed:", src);
       img.src = src;
@@ -637,7 +637,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         setTimeout(drawCloud, 50);
       }
     }
-  }, [theme, cloudMode, isFullscreen, fillShape, restoreFromCache, saveToCache]);
+  }, [theme, cloudMode, isFullscreen, fillShape, restoreFromCache, saveToCache, viewMode]);
 
   useEffect(() => {
     if (!words || words.length === 0) return;
@@ -645,9 +645,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
   }, [words, drawCloud]);
 
   useEffect(() => {
-    if (imagesLoaded) {
-      drawCloud();
-    }
+    if (imagesLoaded === 0) return;
+    drawCloud();
   }, [imagesLoaded, drawCloud]);
 
   // ── When words change, invalidate all mode caches ────────────────────────

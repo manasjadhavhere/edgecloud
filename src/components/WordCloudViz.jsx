@@ -323,36 +323,47 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
         ctx.drawImage(trophy, tX, tY, tW, tH);
 
-        // Golden seal position (centered for both, but different sizes)
+        // Golden seal position
         const cX = tX + tW * 0.50;
         const cY = tY + tH * 0.50;
-        const cR = isEvent ? (tH * 0.446) : (tH * 0.25);
+        
+        // Use an elliptical boundary for the wide event image
+        let rx, ry;
+        if (isEvent) {
+          // The golden boundary is wider than it is tall in the 4200x1008 image
+          rx = tW * 0.15; // 15% of 4200 = 630px radius
+          ry = tH * 0.45; // 45% of 1008 = 453px radius
+        } else {
+          rx = tH * 0.25;
+          ry = tH * 0.25;
+        }
 
-        // Render area = exactly the seal circle (diameter = 2*cR)
-        const size = Math.round(cR * 2);
-        divLeft = Math.round(cX - cR);
-        divTop  = Math.round(cY - cR);
-        divW    = size;
-        divH    = size;
+        const sizeW = Math.round(rx * 2);
+        const sizeH = Math.round(ry * 2);
+        divLeft = Math.round(cX - rx);
+        divTop  = Math.round(cY - ry);
+        divW    = sizeW;
+        divH    = sizeH;
 
-        // Build a circular mask canvas: transparent inside circle, red outside
-        // wordcloud2 uses this to restrict word placement strictly to the circle
+        // Build an elliptical mask canvas
         const maskOff    = document.createElement("canvas");
-        maskOff.width    = size;
-        maskOff.height   = size;
+        maskOff.width    = sizeW;
+        maskOff.height   = sizeH;
         const maskOffCtx = maskOff.getContext("2d");
-        const maskId     = maskOffCtx.getImageData(0, 0, size, size);
-        const cx = size / 2, cy = size / 2;
-        for (let py = 0; py < size; py++) {
-          for (let px = 0; px < size; px++) {
+        const maskId     = maskOffCtx.getImageData(0, 0, sizeW, sizeH);
+        const cx = sizeW / 2, cy = sizeH / 2;
+        
+        for (let py = 0; py < sizeH; py++) {
+          for (let px = 0; px < sizeW; px++) {
             const dx = px - cx, dy = py - cy;
-            const idx = (py * size + px) * 4;
-            if (dx * dx + dy * dy <= cx * cx) {
-              // Inside circle → transparent (wordcloud2 places words here)
-              maskId.data[idx] = 0; maskId.data[idx+1] = 0;
-              maskId.data[idx+2] = 0; maskId.data[idx+3] = 0;
+            // Ellipse equation
+            if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.0) {
+              // Inside: transparent
+              const idx = (py * sizeW + px) * 4;
+              maskId.data[idx+3] = 0; 
             } else {
-              // Outside circle → opaque red (wordcloud2 avoids this)
+              // Outside: opaque red to block words
+              const idx = (py * sizeW + px) * 4;
               maskId.data[idx] = 255; maskId.data[idx+1] = 0;
               maskId.data[idx+2] = 0; maskId.data[idx+3] = 255;
             }
@@ -365,10 +376,11 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         tempDiv.style.width = `${divW}px`;
         tempDiv.style.height = `${divH}px`;
         tempDiv.style.overflow = "hidden";
-        tempDiv.style.borderRadius = "50%";
+        tempDiv.style.borderRadius = isEvent ? "50% / 50%" : "50%"; // elliptical border radius if needed
 
-        const minFont = Math.max(3, isFullscreen ? 6 : 3);
-        const maxFont = Math.min(isFullscreen ? 90 : 55, Math.round(size / 3.5));
+        // B2B Professional styling and robust sizing
+        const minFont = Math.max(12, isFullscreen ? 24 : 12);
+        const maxFont = Math.min(isFullscreen ? 220 : 90, Math.round(sizeH / 2.5));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -377,11 +389,13 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([maskOff, tempDiv], {
               list:            displayWords.map(({ text, value }) => [text, value]),
-              gridSize:        Math.max(4, Math.round(size / 80)),
+              gridSize:        Math.max(8, Math.round(sizeH / 40)), // Larger grid = words push outward more
               weightFactor:    (s) => {
-                return minFont + Math.pow(Math.max(0.01, s / maxVal), 1.1) * (maxFont - minFont);
+                // Flatter curve (0.7 exponent) so less frequent words are still reasonably sized to fill space
+                return minFont + Math.pow(Math.max(0.01, s / maxVal), 0.7) * (maxFont - minFont);
               },
-              fontFamily:      "Impact, 'Arial Black', sans-serif",
+              fontFamily:      "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+              fontWeight:      800,
               color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
               rotateRatio:     0,
               backgroundColor: "transparent",
@@ -391,7 +405,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
               wait:            2,
               abortThreshold:  30,
             });
-            setTimeout(ok, 8000); // Increased timeout to 8s since it's hidden now
+            setTimeout(ok, 8000);
           });
         }
 

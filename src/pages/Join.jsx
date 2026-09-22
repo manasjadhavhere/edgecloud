@@ -9,6 +9,7 @@ import BgGrid from "../components/BgGrid";
 import BottomRightWaves from "../components/BottomRightWaves";
 import { EVENTS } from "../utils/theme";
 import { Send, Loader, CheckCircle, ArrowRight } from "lucide-react";
+import badWords from "../utils/badWords.json";
 
 function NameEntry({ onSubmit, eventId }) {
   const [name, setName] = useState("");
@@ -72,9 +73,26 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
     if (answers.some((a) => !a.trim())) { setError("Please fill in all the blanks before submitting."); return; }
     setError(""); setSubmitting(true);
     try {
-      await push(ref(db, `games/${gameId}/responses`), {
-        name: participantName, words: answers.map((a) => a.trim()), submittedAt: Date.now(),
+      // Filter out abusive words
+      const cleanWords = answers.map((a) => a.trim()).filter((word) => {
+        const lower = word.toLowerCase();
+        const parts = lower.split(/[\s-_]+/);
+        return !badWords.some(bw => {
+          const b = bw.toLowerCase();
+          return lower === b || parts.includes(b);
+        });
       });
+
+      // Only push to DB if there's at least one clean word left
+      if (cleanWords.length > 0) {
+        await push(ref(db, `games/${gameId}/responses`), {
+          name: participantName, 
+          words: cleanWords, 
+          submittedAt: Date.now(),
+        });
+      }
+      
+      // Proceed to Thank You screen regardless to silently drop bad words
       onSubmitted();
     } catch (err) {
       setError("Submission failed: " + err.message); setSubmitting(false);

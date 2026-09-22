@@ -309,14 +309,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       if (trophy) {
         const tAspect = trophy.naturalWidth / trophy.naturalHeight;
         let tW, tH, tX, tY;
-        if (w / h > tAspect) { 
-          // Screen is wider than image -> fit to width to cover
-          tW = w; tH = w / tAspect; tX = 0; tY = (h - tH) / 2; 
-        }
-        else { 
-          // Screen is taller than image -> fit to height to cover
-          tH = h; tW = h * tAspect; tX = (w - tW) / 2; tY = 0; 
-        }
+        if (w / h > tAspect) { tH = h; tW = h * tAspect; tX = (w - tW) / 2; tY = 0; }
+        else                  { tW = w; tH = w / tAspect; tX = 0; tY = (h - tH) / 2; }
         ctx.drawImage(trophy, tX, tY, tW, tH);
 
         // Golden seal position (centered for new background)

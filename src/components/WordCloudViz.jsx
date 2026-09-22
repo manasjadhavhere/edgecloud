@@ -330,9 +330,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         // Use an elliptical boundary for the wide event image
         let rx, ry;
         if (isEvent) {
-          // The golden boundary is wider than it is tall in the 4200x1008 image
-          rx = tW * 0.15; // 15% of 4200 = 630px radius
-          ry = tH * 0.45; // 45% of 1008 = 453px radius
+          // The golden boundary is much wider, spanning ~70% of the image width.
+          rx = tW * 0.35; 
+          ry = tH * 0.45;
         } else {
           rx = tH * 0.25;
           ry = tH * 0.25;
@@ -376,11 +376,11 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         tempDiv.style.width = `${divW}px`;
         tempDiv.style.height = `${divH}px`;
         tempDiv.style.overflow = "hidden";
-        tempDiv.style.borderRadius = isEvent ? "50% / 50%" : "50%"; // elliptical border radius if needed
+        tempDiv.style.borderRadius = isEvent ? "50% / 50%" : "50%";
 
         // B2B Professional styling and robust sizing
-        const minFont = Math.max(12, isFullscreen ? 24 : 12);
-        const maxFont = Math.min(isFullscreen ? 220 : 90, Math.round(sizeH / 2.5));
+        const minFont = Math.max(8, isFullscreen ? 16 : 8);
+        const maxFont = Math.min(isFullscreen ? 200 : 70, Math.round(sizeW / 6)); // Scaled to width so wide words fit
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -389,10 +389,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([maskOff, tempDiv], {
               list:            displayWords.map(({ text, value }) => [text, value]),
-              gridSize:        Math.max(8, Math.round(sizeH / 40)), // Larger grid = words push outward more
+              gridSize:        Math.max(4, Math.round(sizeH / 60)), // Tighter grid so words can pack perfectly and don't get dropped
               weightFactor:    (s) => {
-                // Flatter curve (0.7 exponent) so less frequent words are still reasonably sized to fill space
-                return minFont + Math.pow(Math.max(0.01, s / maxVal), 0.7) * (maxFont - minFont);
+                // Ensure even the lowest frequency words are legible and fill gaps
+                return minFont + Math.pow(Math.max(0.01, s / maxVal), 0.8) * (maxFont - minFont);
               },
               fontFamily:      "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
               fontWeight:      800,

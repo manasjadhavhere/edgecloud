@@ -83,50 +83,67 @@ export default function LiveResults() {
     if (!isEnded) return [];
 
     const repeatedWords = topWords.filter(tw => tw.value > 1);
+    const finalWinners = [];
+    const awardedNames = new Set();
+    let rank = 1;
 
     if (repeatedWords.length > 0) {
-      const top3Words = repeatedWords.slice(0, 3);
-      return top3Words.map((tw, index) => {
-        let firstSubmitter = "Unknown";
+      for (const tw of repeatedWords) {
+        if (finalWinners.length >= 3) break;
+
+        let bestSubmitter = null;
         let earliestTime = Infinity;
         
+        // Find the earliest submitter for this word who hasn't won yet
         responses.forEach(r => {
           r.words.forEach(w => {
             if (w.trim().toLowerCase() === tw.text.toLowerCase()) {
-              if (r.submittedAt < earliestTime) {
+              if (!awardedNames.has(r.name) && r.submittedAt < earliestTime) {
                 earliestTime = r.submittedAt;
-                firstSubmitter = r.name;
+                bestSubmitter = r.name;
               }
             }
           });
         });
         
-        return {
-          rank: index + 1,
-          playerName: firstSubmitter,
-          word: tw.text,
-          count: tw.value,
-          reason: `First to submit "${tw.text}"`
-        };
-      });
-    } else {
-      // Random winners if no words are repeated
+        if (bestSubmitter) {
+          awardedNames.add(bestSubmitter);
+          finalWinners.push({
+            rank: rank++,
+            playerName: bestSubmitter,
+            word: tw.text,
+            count: tw.value,
+            reason: `First unique to submit "${tw.text}"`
+          });
+        }
+      }
+    }
+
+    // If we still don't have 3 winners (no repeated words, or not enough unique submitters), pad with pseudo-random
+    if (finalWinners.length < 3) {
       const uniqueNames = [...new Set(responses.map(r => r.name))];
-      // Simple stable pseudo-random sort using character codes to prevent re-renders shuffling
-      const shuffled = [...uniqueNames].sort((a, b) => {
+      const availableNames = uniqueNames.filter(name => !awardedNames.has(name));
+      
+      const shuffled = [...availableNames].sort((a, b) => {
         const sumA = a.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const sumB = b.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         return (sumA % 10) - (sumB % 10);
       });
       
-      return shuffled.slice(0, 3).map((name, index) => ({
-        rank: index + 1,
-        playerName: name,
-        word: "-",
-        count: 1,
-        reason: "Random Selection"
-      }));
+      for (const name of shuffled) {
+        if (finalWinners.length >= 3) break;
+        awardedNames.add(name);
+        finalWinners.push({
+          rank: rank++,
+          playerName: name,
+          word: "-",
+          count: 1,
+          reason: "Random Selection"
+        });
+      }
     }
+
+    return finalWinners;
   }, [isEnded, topWords, responses]);
 
   // Excel Download

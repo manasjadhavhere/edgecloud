@@ -8,6 +8,7 @@ import Join    from "./pages/Join";
 import Results from "./pages/Results";
 
 import LiveResults from "./pages/LiveResults";
+import QRPage      from "./pages/QRPage";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/join/:gameId"      element={<Join />} />
         <Route path="/results/:gameId"   element={<Results />} />
         <Route path="/live_results/:gameId" element={<LiveResults />} />
+        <Route path="/qr/:gameId"        element={<QRPage />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

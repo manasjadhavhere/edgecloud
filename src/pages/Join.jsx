@@ -189,7 +189,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
   );
 }
 
-function ThankYouScreen({ eventId, onPlayAgain }) {
+function ThankYouScreen({ eventId, onPlayAgain, isEnded }) {
   const event = EVENTS[eventId];
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
@@ -198,17 +198,21 @@ function ThankYouScreen({ eventId, onPlayAgain }) {
       <div className="card animate-slide-right" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2rem 1rem" }}>
         <CheckCircle size={48} style={{ color: "#16A34A", margin: "0 auto 1.25rem" }} />
         {event && <img src={event.logo} alt={event.name} style={{ height: 40, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}
-        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.5rem", color: "var(--text)" }}>Thank You!</h2>
+        <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.5rem", color: "var(--text)" }}>{isEnded ? "Session Ended" : "Thank You!"}</h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "2rem", lineHeight: 1.6 }}>
-          Your response has been successfully submitted. Watch the main screen to see the live word cloud!
+          {isEnded 
+            ? "This live session has concluded. Check the main screen for the final results!" 
+            : "Your response has been successfully submitted. Watch the main screen to see the live word cloud!"}
         </p>
-        <button 
-          className="btn btn-outline" 
-          style={{ width: "100%", borderRadius: "2px" }}
-          onClick={onPlayAgain}
-        >
-          Play Again
-        </button>
+        {!isEnded && (
+          <button 
+            className="btn btn-outline" 
+            style={{ width: "100%", borderRadius: "2px" }}
+            onClick={onPlayAgain}
+          >
+            Play Again
+          </button>
+        )}
       </div>
     </div>
   );
@@ -249,6 +253,7 @@ export default function Join() {
     catch (err) { console.error("Participant registration failed:", err); }
   }
 
+  if (game?.status === "ended") return <ThankYouScreen eventId={game?.eventId} isEnded={true} />;
   if (!participantName) return <NameEntry onSubmit={handleNameSubmit} eventId={game?.eventId} />;
   if (submitted)        return <ThankYouScreen eventId={game?.eventId} onPlayAgain={() => { setParticipantName(null); setSubmitted(false); }} />;
 

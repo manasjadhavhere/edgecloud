@@ -61,7 +61,7 @@ function loadImg(src) {
  * Words update in real-time. Switching modes restores a cached render
  * so the layout never changes just from toggling.
  */
-export default function WordCloudViz({ words, forwardedRef, theme = "default", fillShape = false, onStop = null }) {
+export default function WordCloudViz({ words, forwardedRef, theme = "default", viewMode = "normal", fillShape = false, onStop = null }) {
   const canvasRef    = useRef(null);
   const containerRef = useRef(null);
   const htmlCloudRef = useRef(null);
@@ -84,7 +84,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
    * Pre-loaded images — loaded once at mount so drawCloud never awaits images
    * (eliminates the race where gen changes while awaiting loadImg).
    */
-  const imgRefs = useRef({ trophy: null, crown: null, fullTrophy: null });
+  const imgRefs = useRef({ trophy: null, trophyEvent: null, crown: null, fullTrophy: null });
 
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
@@ -101,6 +101,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
       img.src = src;
     };
     load("/events_shape/best_iconic_brands.png", "trophy");
+    load("/events_shape/best_iconic_brands_event.png", "trophyEvent");
     load("/events_shape/crown_mask.jpg",          "crown");
     load("/events_shape/iconic_full_trophy_mask.jpg", "fullTrophy");
   }, []);
@@ -185,7 +186,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
     pendingDrawRef.current = false;
 
     try {
-      const cacheKey = JSON.stringify(currentWords) + "|" + isFullscreen;
+      const cacheKey = JSON.stringify(currentWords) + "|" + isFullscreen + "|" + viewMode;
 
       // ── Cache hit: same words, same fullscreen, switching mode back → restore ──
       const hit = cache.current[cloudMode];
@@ -303,20 +304,29 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", f
 
     // ── TROPHY VIEW ───────────────────────────────────────────────────────────
     if (cloudMode === "trophy") {
-      // Use pre-loaded image (synchronous — no race condition)
-      const trophy = imgRefs.current.trophy;
+      const isEvent = viewMode === "event";
+      const trophy = isEvent ? imgRefs.current.trophyEvent : imgRefs.current.trophy;
 
       if (trophy) {
-        const tAspect = trophy.naturalWidth / trophy.naturalHeight;
         let tW, tH, tX, tY;
-        if (w / h > tAspect) { tH = h; tW = h * tAspect; tX = (w - tW) / 2; tY = 0; }
-        else                  { tW = w; tH = w / tAspect; tX = 0; tY = (h - tH) / 2; }
+        if (isEvent && isFullscreen) {
+          // Stretch to fill exactly end to end on LED screens
+          tW = w;
+          tH = h;
+          tX = 0;
+          tY = 0;
+        } else {
+          // Normal aspect-ratio preserving logic
+          const tAspect = trophy.naturalWidth / trophy.naturalHeight;
+          if (w / h > tAspect) { tH = h; tW = h * tAspect; tX = (w - tW) / 2; tY = 0; }
+          else                  { tW = w; tH = w / tAspect; tX = 0; tY = (h - tH) / 2; }
+        }
         ctx.drawImage(trophy, tX, tY, tW, tH);
 
-        // Golden seal position (centered for new background)
+        // Golden seal position (centered for both, but different sizes)
         const cX = tX + tW * 0.50;
         const cY = tY + tH * 0.50;
-        const cR = tH * 0.25;
+        const cR = isEvent ? (tH * 0.446) : (tH * 0.25);
 
         // Render area = exactly the seal circle (diameter = 2*cR)
         const size = Math.round(cR * 2);

@@ -206,6 +206,7 @@ export default function Host() {
 
   const [step, setStep] = useState(location.state?.step || 1);
   const [sentence, setSentence] = useState("");
+  const [viewMode, setViewMode] = useState("normal");
   const [gameId, setGameId] = useState(location.state?.gameId || null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
@@ -225,6 +226,7 @@ export default function Host() {
         status: "active",
         createdAt: Date.now(),
         eventId: eventId || "default",
+        viewMode: viewMode,
       });
       await set(ref(db, "activeGame"), id);
       setGameId(id);
@@ -350,6 +352,18 @@ export default function Host() {
                 </p>
                 <SentenceEditor sentence={sentence} setSentence={setSentence} textareaRef={textareaRef} />
                 
+                <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>Display Mode:</label>
+                  <select 
+                    value={viewMode} 
+                    onChange={(e) => setViewMode(e.target.value)}
+                    style={{ padding: "0.5rem 1rem", borderRadius: "4px", border: "1px solid var(--border)", fontSize: "0.85rem", outline: "none", cursor: "pointer", background: "#fff" }}
+                  >
+                    <option value="normal">Normal View</option>
+                    <option value="event">Event View (LED Screen)</option>
+                  </select>
+                </div>
+                
                 {error && <div className="fade-in" style={{ background: "#FEF2F2", color: "#B91C1C", padding: "0.85rem 1rem", borderRadius: "4px", fontSize: "0.85rem", marginTop: "1.25rem", display: "flex", alignItems: "center", gap: "8px", fontWeight: 500, border: "1px solid #FECACA" }}>
                   <StopCircle size={16} /> {error}
                 </div>}
@@ -409,7 +423,7 @@ export default function Host() {
                 <div className="card" style={{ minHeight: 400 }}>
                   <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Live Word Cloud</p>
                   <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", minHeight: 320, overflow: "hidden" }}>
-                    <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} forwardedRef={cloudCanvasRef} />
+                    <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} viewMode={game?.viewMode || "normal"} forwardedRef={cloudCanvasRef} />
                   </div>
                 </div>
               </div>

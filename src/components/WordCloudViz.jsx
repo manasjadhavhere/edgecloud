@@ -307,8 +307,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
       const isEvent = viewMode === "event";
       const trophy = isEvent ? imgRefs.current.trophyEvent : imgRefs.current.trophy;
 
-      if (trophy) {
-        let tW, tH, tX, tY;
+      if (!trophy) return; // Prevent caching stale pixels if image hasn't loaded yet
+
+      let tW, tH, tX, tY;
         if (isEvent && isFullscreen) {
           // Stretch to fill exactly end to end on LED screens
           tW = w;
@@ -410,7 +411,6 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
 
         if (gen !== genRef.current) return;
-      }
     }
 
     // ── SHAPE CLOUD (crown) ───────────────────────────────────────────────────

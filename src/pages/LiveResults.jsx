@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame } from "../hooks/useGame";
 import { computeWordFrequencies } from "../utils/wordCount";
-import { Lock, ArrowRight, Download, StopCircle, CheckCircle, Table, BarChart2 } from "lucide-react";
+import { Lock, ArrowRight, Download, StopCircle, CheckCircle, Table, BarChart2, Trophy } from "lucide-react";
 import { db } from "../firebase";
 import { ref, update, set } from "firebase/database";
 import * as XLSX from "xlsx";
@@ -44,6 +44,8 @@ export default function LiveResults() {
   };
 
   // Data processing
+  const isEnded = game?.status === "ended";
+
   const topWords = useMemo(() => computeWordFrequencies(responses), [responses]);
   
   // Create a map for quick frequency lookup
@@ -75,6 +77,57 @@ export default function LiveResults() {
     // Sort descending by time
     return data.sort((a, b) => b.submittedAt - a.submittedAt);
   }, [responses, wordFreqMap]);
+
+  // Winners Logic
+  const winners = useMemo(() => {
+    if (!isEnded) return [];
+
+    const repeatedWords = topWords.filter(tw => tw.value > 1);
+
+    if (repeatedWords.length > 0) {
+      const top3Words = repeatedWords.slice(0, 3);
+      return top3Words.map((tw, index) => {
+        let firstSubmitter = "Unknown";
+        let earliestTime = Infinity;
+        
+        responses.forEach(r => {
+          r.words.forEach(w => {
+            if (w.trim().toLowerCase() === tw.text.toLowerCase()) {
+              if (r.submittedAt < earliestTime) {
+                earliestTime = r.submittedAt;
+                firstSubmitter = r.name;
+              }
+            }
+          });
+        });
+        
+        return {
+          rank: index + 1,
+          playerName: firstSubmitter,
+          word: tw.text,
+          count: tw.value,
+          reason: `First to submit "${tw.text}"`
+        };
+      });
+    } else {
+      // Random winners if no words are repeated
+      const uniqueNames = [...new Set(responses.map(r => r.name))];
+      // Simple stable pseudo-random sort using character codes to prevent re-renders shuffling
+      const shuffled = [...uniqueNames].sort((a, b) => {
+        const sumA = a.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const sumB = b.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return (sumA % 10) - (sumB % 10);
+      });
+      
+      return shuffled.slice(0, 3).map((name, index) => ({
+        rank: index + 1,
+        playerName: name,
+        word: "-",
+        count: 1,
+        reason: "Random Selection"
+      }));
+    }
+  }, [isEnded, topWords, responses]);
 
   // Excel Download
   const downloadExcel = () => {
@@ -134,8 +187,6 @@ export default function LiveResults() {
     );
   }
 
-  const isEnded = game?.status === "ended";
-
   return (
     <div style={{ minHeight: "100vh", background: "#f1f5f9", position: "relative" }}>
       <BgGrid />
@@ -178,6 +229,13 @@ export default function LiveResults() {
               style={{ flex: 1, padding: "1.25rem", background: activeTab === "top" ? "#fff" : "#f8fafc", border: "none", borderBottom: activeTab === "top" ? "3px solid #901b1e" : "3px solid transparent", color: activeTab === "top" ? "#901b1e" : "#64748b", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", transition: "all 0.2s" }}>
               <BarChart2 size={18} /> Top Words
             </button>
+            {isEnded && (
+              <button 
+                onClick={() => setActiveTab("winners")}
+                style={{ flex: 1, padding: "1.25rem", background: activeTab === "winners" ? "#fff" : "#f8fafc", border: "none", borderBottom: activeTab === "winners" ? "3px solid #901b1e" : "3px solid transparent", color: activeTab === "winners" ? "#901b1e" : "#64748b", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", transition: "all 0.2s" }}>
+                <Trophy size={18} /> Winners
+              </button>
+            )}
           </div>
 
           {/* Tab Content */}
@@ -249,6 +307,40 @@ export default function LiveResults() {
                     {topWords.length === 0 && (
                       <tr>
                         <td colSpan="3" style={{ padding: "3rem", textAlign: "center", color: "#94a3b8" }}>No words submitted yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {activeTab === "winners" && isEnded && (
+              <div style={{ overflowX: "auto", borderRadius: "8px", border: "1px solid #e2e8f0", maxWidth: 800, margin: "0 auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                  <thead style={{ background: "#f8fafc" }}>
+                    <tr>
+                      <th style={{ padding: "1rem", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 600 }}>Rank</th>
+                      <th style={{ padding: "1rem", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 600 }}>Winner</th>
+                      <th style={{ padding: "1rem", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 600 }}>Winning Word</th>
+                      <th style={{ padding: "1rem", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 600 }}>Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {winners.map((row, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #f1f5f9", background: i === 0 ? "#fefce8" : (i === 1 ? "#f8fafc" : "#fff") }}>
+                        <td style={{ padding: "1rem", color: "#94a3b8", fontWeight: 700, fontSize: "1.1rem" }}>
+                          {i === 0 ? "🥇 1st" : (i === 1 ? "🥈 2nd" : "🥉 3rd")}
+                        </td>
+                        <td style={{ padding: "1rem", color: "#0f172a", fontWeight: 800, fontSize: "1.1rem" }}>{row.playerName}</td>
+                        <td style={{ padding: "1rem", color: "#901b1e", fontWeight: 700 }}>
+                          {row.word} {row.count > 1 && `(X${row.count})`}
+                        </td>
+                        <td style={{ padding: "1rem", color: "#64748b", fontSize: "0.9rem" }}>{row.reason}</td>
+                      </tr>
+                    ))}
+                    {winners.length === 0 && (
+                      <tr>
+                        <td colSpan="4" style={{ padding: "3rem", textAlign: "center", color: "#94a3b8" }}>No winners could be determined.</td>
                       </tr>
                     )}
                   </tbody>

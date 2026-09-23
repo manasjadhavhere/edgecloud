@@ -805,87 +805,116 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
       if (children.length === 0) return;
 
       // Enable CSS perspective on the container for true 3D depth perception
-      container.style.perspective = "1200px";
+      // Tighter perspective = more exaggerated depth distortion (cinematic feel)
+      container.style.perspective = "900px";
       container.style.perspectiveOrigin = "50% 50%";
 
       if (cloudMode === "full_trophy") {
-        // ── Full trophy: staggered 3D zoom-pop per word ──────────────────────
-        const shuffled = shuffle(children);
-        shuffled.forEach(s => { s.style.opacity = "0"; s.style.transition = "none"; });
-        shuffled.forEach((span, i) => {
-          const baseTransform = (span.style.transform || "").replace(/scale\([^)]*\)/g, "").trim();
-          const tilt = (Math.random() - 0.5) * 30;
-          span.animate(
-            [
+          // full_trophy: Cinematic orbital burst — each word fires in from deep Z-space
+          // with a glowing chromatic overshoot at the screen-plane, then snaps to rest.
+          const shuffled = shuffle(children);
+          shuffled.forEach(s => { s.style.opacity = "0"; s.style.transition = "none"; });
+          shuffled.forEach((span, i) => {
+            const baseTransform = (span.style.transform || "").replace(/scale\([^)]*\)/g, "").trim();
+            // Random tilt starting in 3D space — heavier tilt for deeper words
+            const tilt = (Math.random() - 0.5) * 45;
+            // Start deeply behind screen with random XY drift to create an orbital burst feel
+            const startZ = -(1200 + Math.random() * 600);
+            const startX = (Math.random() - 0.5) * 180;
+            const startY = (Math.random() - 0.5) * 90;
+            // Stagger in 4 waves for a cascading depth effect
+            const wave = i % 4;
+            const waveDelay = wave * 60;
+            const wordDelay = Math.floor(i / 4) * 35 + waveDelay;
+
+            span.animate(
+              [
+                {
+                  opacity: 0,
+                  filter: `blur(12px) brightness(0.5)`,
+                  transform: `${baseTransform} translate(${startX}px, ${startY}px) translateZ(${startZ}px) scale(0.05) rotate(${tilt}deg)`,
+                },
+                {
+                  opacity: 0.9,
+                  // Chromatic glow burst as word crosses the screen plane
+                  filter: `blur(0px) brightness(1.6) drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.6))`,
+                  transform: `${baseTransform} translate(${startX * 0.03}px, ${startY * 0.03}px) translateZ(60px) scale(1.12) rotate(${tilt * 0.04}deg)`,
+                  offset: 0.72,
+                },
+                {
+                  opacity: 1,
+                  filter: `blur(0px) brightness(1) drop-shadow(0 0 0px rgba(255,215,0,0))`,
+                  transform: `${baseTransform} translate(0,0) translateZ(0px) scale(1) rotate(0deg)`,
+                },
+              ],
               {
-                opacity: 0,
-                filter: "blur(8px)",
-                transform: `${baseTransform} translateZ(-600px) scale(0.2) rotate(${tilt}deg)`,
-              },
-              {
-                opacity: 1,
-                filter: "blur(0px)",
-                transform: `${baseTransform} translateZ(20px) scale(1.08) rotate(0deg)`,
-                offset: 0.7,
-              },
-              {
-                opacity: 1,
-                filter: "blur(0px)",
-                transform: `${baseTransform} translateZ(0px) scale(1) rotate(0deg)`,
-              },
-            ],
-            {
-              duration: 700,
-              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-              delay: i * 40,
-              fill: "both",
-            }
-          );
-          setTimeout(() => {
-            span.style.opacity = "1";
-            span.style.filter = "";
-            span.style.transform = baseTransform;
-          }, i * 40 + 760);
-        });
+                duration: 1100,
+                easing: "cubic-bezier(0.12, 0.8, 0.25, 1)",
+                delay: wordDelay,
+                fill: "backwards",
+              }
+            );
+            setTimeout(() => {
+              span.style.opacity = "1";
+              span.style.filter = "";
+              span.style.transform = baseTransform;
+            }, wordDelay + 1160);
+          });
+
       } else {
-        // ── Trophy seal: 3D depth fly-in — words zoom from behind the screen ─
+        // ── Trophy seal: Full cinematic 3D depth-burst with chromatic overshoot ─
+        // Words start in deep Z-negative space (far behind screen), fly towards viewer,
+        // burst through with a golden glow halo, then settle precisely into position.
         const shuffled = shuffle(children);
         shuffled.forEach(s => { s.style.opacity = "0"; });
         try {
           shuffled.forEach((span, i) => {
             const bt = (span.style.transform || "");
-            // Each word starts scattered in Z-space (far behind screen) plus random X/Y drift
-            const scatterX = (Math.random() - 0.5) * 200;
-            const scatterY = (Math.random() - 0.5) * 200;
-            const startZ   = -(700 + Math.random() * 400);
-            const startScale = 0.08 + Math.random() * 0.12;
-            const startBlur = 8 + Math.random() * 6;
-            const tilt = (Math.random() - 0.5) * 50;
+            // Compute screen-center distance to add lens-distortion-like XY parallax
+            const rect = div.getBoundingClientRect();
+            const spanRect = span.getBoundingClientRect();
+            const relX = spanRect.left - rect.left - rect.width / 2;
+            const relY = spanRect.top - rect.top - rect.height / 2;
+            const distFactor = Math.sqrt(relX * relX + relY * relY) / Math.max(rect.width, 1);
+
+            // Words on the edges start from further out XY, creating a real parallax burst
+            const scatterX = relX * (1.5 + Math.random() * 0.5);
+            const scatterY = relY * (1.5 + Math.random() * 0.5);
+            // Deeper Z for words further from center — cinematic lens effect
+            const startZ = -(900 + distFactor * 600 + Math.random() * 300);
+            const startScale = 0.04 + Math.random() * 0.08;
+            const startBlur = 14 + Math.random() * 8;
+            const tilt = (Math.random() - 0.5) * 70;
+
+            // Stagger in 3 depth layers — near words animate first for a depth-sorting feel
+            const layer = i % 3;
+            const wordDelay = layer * 80 + Math.floor(i / 3) * 25;
 
             span.style.opacity = "1";
             span.animate(
               [
                 {
                   opacity: 0,
-                  filter: `blur(${startBlur}px)`,
+                  filter: `blur(${startBlur}px) brightness(0.3)`,
                   transform: `translate(${scatterX}px, ${scatterY}px) translateZ(${startZ}px) scale(${startScale}) rotate(${tilt}deg) ${bt}`,
                 },
                 {
-                  opacity: 0.7,
-                  filter: "blur(1px)",
-                  transform: `translate(${scatterX * 0.08}px, ${scatterY * 0.08}px) translateZ(25px) scale(1.05) rotate(${tilt * 0.08}deg) ${bt}`,
-                  offset: 0.78,
+                  opacity: 0.85,
+                  // Peak chromatic gold glow as word punches through screen plane
+                  filter: `blur(0.5px) brightness(1.8) drop-shadow(0 0 16px rgba(255,215,0,0.95)) drop-shadow(0 0 6px rgba(255,255,255,0.7))`,
+                  transform: `translate(${scatterX * 0.04}px, ${scatterY * 0.04}px) translateZ(80px) scale(1.18) rotate(${tilt * 0.04}deg) ${bt}`,
+                  offset: 0.74,
                 },
                 {
                   opacity: 1,
-                  filter: "blur(0px)",
+                  filter: `blur(0px) brightness(1) drop-shadow(0 0 0px rgba(255,215,0,0))`,
                   transform: `translate(0,0) translateZ(0px) scale(1) rotate(0deg) ${bt}`,
                 },
               ],
               {
-                duration: 1300,
-                easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-                delay: i * 20,
+                duration: 1500,
+                easing: "cubic-bezier(0.10, 0.9, 0.22, 1)",
+                delay: wordDelay,
                 fill: "backwards",
               }
             );

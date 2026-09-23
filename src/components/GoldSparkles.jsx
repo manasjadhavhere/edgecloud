@@ -10,7 +10,7 @@ export default function GoldSparkles() {
       top: `${Math.random() * 100}%`,
       delay: `${Math.random() * 8}s`,
       duration: `${Math.random() * 4 + 2}s`,
-      size: `${Math.random() * 10 + 4}px`, // slightly smaller on average due to high density
+      size: `${Math.random() * 20 + 10}px`, // increased scale
       rotation: `${Math.random() * 90}deg`
     }));
   }, []);
@@ -44,9 +44,9 @@ export default function GoldSparkles() {
         ))}
         <style>{`
         @keyframes sparkle-shine {
-          0% { transform: translateY(0) scale(0) rotate(0deg); opacity: 0; filter: drop-shadow(0 0 2px #FFD700); }
-          50% { opacity: 0.9; transform: translateY(-10px) scale(1) rotate(45deg); filter: drop-shadow(0 0 10px #FFD700); }
-          100% { transform: translateY(-20px) scale(0) rotate(90deg); opacity: 0; filter: drop-shadow(0 0 2px #FFD700); }
+          0% { transform: translateY(0) scale(0) rotate(0deg); opacity: 0; filter: drop-shadow(0 0 5px #FFD700) drop-shadow(0 0 10px #FFD700); }
+          50% { opacity: 1; transform: translateY(-10px) scale(1.3) rotate(45deg); filter: drop-shadow(0 0 15px #FFD700) drop-shadow(0 0 25px rgba(255,215,0,0.8)); }
+          100% { transform: translateY(-20px) scale(0) rotate(90deg); opacity: 0; filter: drop-shadow(0 0 5px #FFD700); }
         }
         @keyframes subtle-border-pulse {
           0% { box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.05); }

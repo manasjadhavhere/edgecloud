@@ -100,7 +100,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
       setIsRocketing(true);
       setTimeout(() => {
         onSubmitted();
-      }, 1500);
+      }, 3500);
     } catch (err) {
       setError("Submission failed: " + err.message); setSubmitting(false);
     }
@@ -203,14 +203,14 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
             <div
               key={i}
               style={{
-                fontSize: "2.5rem", fontWeight: 800, color: "var(--primary)",
-                animation: `rocket-fly 1.2s cubic-bezier(0.5, 0, 0.2, 1) forwards`,
-                animationDelay: `${i * 0.15}s`,
+                fontSize: "3rem", fontWeight: 900, color: "#FFFFFF",
+                animation: `rocket-fly 3.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`,
+                animationDelay: `${i * 0.4}s`,
                 opacity: 0,
                 transform: "translateY(100vh)",
                 position: "absolute",
                 textTransform: "uppercase",
-                textShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                textShadow: "0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 140, 0, 0.8), 0 15px 60px rgba(255, 69, 0, 1)"
               }}
             >
               {word}
@@ -218,10 +218,11 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
           ))}
           <style>{`
             @keyframes rocket-fly {
-              0% { opacity: 0; transform: translateY(100vh) scale(0.8); }
-              20% { opacity: 1; transform: translateY(10vh) scale(1.4); }
-              60% { opacity: 1; transform: translateY(-10vh) scale(1.4); }
-              100% { opacity: 0; transform: translateY(-100vh) scale(0.8); filter: blur(4px); }
+              0% { opacity: 0; transform: translateY(100vh) scale(0.6); }
+              10% { opacity: 1; transform: translateY(30vh) scale(1.1); filter: drop-shadow(0 40px 30px rgba(255,215,0,0.4)); }
+              40% { opacity: 1; transform: translateY(-5vh) scale(1.3); filter: drop-shadow(0 60px 40px rgba(255,215,0,0.6)); }
+              70% { opacity: 1; transform: translateY(-15vh) scale(1.3); filter: drop-shadow(0 80px 50px rgba(255,215,0,0.8)); }
+              100% { opacity: 0; transform: translateY(-100vh) scale(0.8); filter: blur(6px); }
             }
           `}</style>
         </div>

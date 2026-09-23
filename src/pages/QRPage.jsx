@@ -55,34 +55,7 @@ export default function QRPage() {
           />
         </div>
 
-        <div style={{
-          background: "rgba(0,0,0,0.3)",
-          padding: "1rem 2rem",
-          borderRadius: "12px",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem",
-          border: "1px solid rgba(255,255,255,0.1)"
-        }}>
-          <span style={{ 
-            color: "#fca5a5", 
-            fontSize: "1rem", 
-            fontWeight: 600, 
-            textTransform: "uppercase", 
-            letterSpacing: "0.1em" 
-          }}>
-            Game ID
-          </span>
-          <span style={{ 
-            color: "#ffffff", 
-            fontSize: "2rem", 
-            fontWeight: 800, 
-            letterSpacing: "0.15em",
-            fontFamily: "monospace"
-          }}>
-            {gameId}
-          </span>
-        </div>
+
       </div>
     </div>
   );

@@ -444,6 +444,13 @@ export default function Host() {
                   <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center", wordBreak: "break-all", fontFamily: "monospace" }}>
                     {joinUrl}
                   </p>
+                  <button 
+                    className="btn btn-outline"
+                    style={{ width: "100%", marginTop: "0.75rem", fontSize: "0.75rem" }}
+                    onClick={() => window.open(`/qr/${gameId}`, '_blank')}
+                  >
+                    Open Fullscreen QR
+                  </button>
                 </div>
 
                 {/* Participants */}

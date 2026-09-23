@@ -49,8 +49,8 @@ export default function GoldSparkles() {
           100% { transform: translateY(-20px) scale(0) rotate(90deg); opacity: 0; filter: drop-shadow(0 0 2px #FFD700); }
         }
         @keyframes subtle-border-pulse {
-          0% { box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.05); }
-          100% { box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.25); border: 1px solid rgba(255, 215, 0, 0.15); }
+          0% { box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.05); }
+          100% { box-shadow: inset 0 0 80px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.4); border: 2px solid rgba(255, 215, 0, 0.5); }
         }
       `}</style>
     </div>

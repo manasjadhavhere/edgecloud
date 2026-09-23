@@ -799,53 +799,90 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
       const children = Array.from(div.children);
       if (children.length === 0) return;
 
+      // Enable CSS perspective on the container for true 3D depth perception
+      container.style.perspective = "1200px";
+      container.style.perspectiveOrigin = "50% 50%";
+
       if (cloudMode === "full_trophy") {
-        // ── Piece-by-piece random pop-in: shuffle → staggered scale+fade ────────
+        // ── Full trophy: staggered 3D zoom-pop per word ──────────────────────
         const shuffled = shuffle(children);
-        // Start all invisible
         shuffled.forEach(s => { s.style.opacity = "0"; s.style.transition = "none"; });
         shuffled.forEach((span, i) => {
           const baseTransform = (span.style.transform || "").replace(/scale\([^)]*\)/g, "").trim();
-          const tilt = Math.random() > 0.5 ? 12 : -12;
+          const tilt = (Math.random() - 0.5) * 30;
           span.animate(
             [
-              { opacity: 0, transform: `${baseTransform} scale(0) rotate(${tilt}deg)` },
-              { opacity: 1, transform: `${baseTransform} scale(1.12) rotate(0deg)`, offset: 0.65 },
-              { opacity: 1, transform: `${baseTransform} scale(1)    rotate(0deg)` },
+              {
+                opacity: 0,
+                filter: "blur(8px)",
+                transform: `${baseTransform} translateZ(-600px) scale(0.2) rotate(${tilt}deg)`,
+              },
+              {
+                opacity: 1,
+                filter: "blur(0px)",
+                transform: `${baseTransform} translateZ(20px) scale(1.08) rotate(0deg)`,
+                offset: 0.7,
+              },
+              {
+                opacity: 1,
+                filter: "blur(0px)",
+                transform: `${baseTransform} translateZ(0px) scale(1) rotate(0deg)`,
+              },
             ],
             {
-              duration: 420,
-              easing: "cubic-bezier(0.34,1.56,0.64,1)",
-              delay: i * 75,
+              duration: 700,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              delay: i * 40,
               fill: "both",
             }
           );
-          // Guarantee final resting state after animation
           setTimeout(() => {
             span.style.opacity = "1";
+            span.style.filter = "";
             span.style.transform = baseTransform;
-          }, i * 75 + 480);
+          }, i * 40 + 760);
         });
       } else {
-        // ── Trophy seal / Shape cloud: fly-in from edges ────────────────────────
-        const cRect = container.getBoundingClientRect();
-        const dRect = div.getBoundingClientRect();
+        // ── Trophy seal: 3D depth fly-in — words zoom from behind the screen ─
+        const shuffled = shuffle(children);
+        shuffled.forEach(s => { s.style.opacity = "0"; });
         try {
-          children.forEach(s => { s.style.opacity = "0"; });
-          children.forEach((span, i) => {
-            const cx = span.offsetLeft + span.offsetWidth / 2;
-            const cy = span.offsetTop + span.offsetHeight / 2;
-            const ax = (dRect.left - cRect.left) + cx;
-            const ay = (dRect.top - cRect.top) + cy;
-            let dx = ax - w / 2, dy = ay - h / 2;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            dx = (dx / dist) * (dist + 400);
-            dy = (dy / dist) * (dist + 400);
-            const bt = span.style.transform || "";
+          shuffled.forEach((span, i) => {
+            const bt = (span.style.transform || "");
+            // Each word starts scattered in Z-space (far behind screen) plus random X/Y drift
+            const scatterX = (Math.random() - 0.5) * 200;
+            const scatterY = (Math.random() - 0.5) * 200;
+            const startZ   = -(700 + Math.random() * 400);
+            const startScale = 0.08 + Math.random() * 0.12;
+            const startBlur = 8 + Math.random() * 6;
+            const tilt = (Math.random() - 0.5) * 50;
+
             span.style.opacity = "1";
             span.animate(
-              [{ opacity: 0, transform: `translate(${dx}px,${dy}px) ${bt}` }, { opacity: 1, transform: `translate(0,0) ${bt}` }],
-              { duration: 1400, easing: "cubic-bezier(0.16,1,0.3,1)", delay: i * 18, fill: "backwards" }
+              [
+                {
+                  opacity: 0,
+                  filter: `blur(${startBlur}px)`,
+                  transform: `translate(${scatterX}px, ${scatterY}px) translateZ(${startZ}px) scale(${startScale}) rotate(${tilt}deg) ${bt}`,
+                },
+                {
+                  opacity: 0.7,
+                  filter: "blur(1px)",
+                  transform: `translate(${scatterX * 0.08}px, ${scatterY * 0.08}px) translateZ(25px) scale(1.05) rotate(${tilt * 0.08}deg) ${bt}`,
+                  offset: 0.78,
+                },
+                {
+                  opacity: 1,
+                  filter: "blur(0px)",
+                  transform: `translate(0,0) translateZ(0px) scale(1) rotate(0deg) ${bt}`,
+                },
+              ],
+              {
+                duration: 1300,
+                easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+                delay: i * 20,
+                fill: "backwards",
+              }
             );
           });
         } catch (e) {
@@ -878,7 +915,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
 
     const timer = setTimeout(() => {
       drawCloudRef.current?.();
-    }, 2000);
+    }, 3000);
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

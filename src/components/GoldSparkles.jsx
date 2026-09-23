@@ -2,15 +2,15 @@ import React from "react";
 
 export default function GoldSparkles() {
   // Memoize random positions so they don't jump around on re-renders
-  // Increased count to 150 for a massive, dense sparkling effect
+  // Increased count to 350 for an extremely dense sparkling effect
   const sparkles = React.useMemo(() => {
-    return Array.from({ length: 150 }).map((_, i) => ({
+    return Array.from({ length: 350 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
       delay: `${Math.random() * 8}s`,
       duration: `${Math.random() * 4 + 2}s`,
-      size: `${Math.random() * 12 + 6}px`, // slightly smaller on average so 150 isn't overwhelming
+      size: `${Math.random() * 10 + 4}px`, // slightly smaller on average due to high density
       rotation: `${Math.random() * 90}deg`
     }));
   }, []);

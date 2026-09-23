@@ -611,7 +611,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([maskOff, tempDiv], {
-              list: displayWords.map(({ text, value }) => [text, value]),
+              list: displayWords.map(({ text, value }) => [text.toUpperCase(), value]),
               gridSize,
               classes: "wordcloud-span",
               weightFactor: (s) => {

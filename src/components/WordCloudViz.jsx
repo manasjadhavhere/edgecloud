@@ -710,7 +710,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
 
         // Inject global CSS to scale down the spans, creating a guaranteed perfect gap (padding) between words
         // By scaling the HTML spans down, we perfectly compensate for the artificially inflated collision boxes (see below).
-        const scaleFactor = 1 / 1.15;
+        const scaleFactor = 1 / 1.25;
         const styleId = "wordcloud-css-fix";
         if (!document.getElementById(styleId)) {
           const style = document.createElement("style");
@@ -722,25 +722,26 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
               line-height: 1 !important;
               margin: 0 !important;
               padding: 0 !important;
+              white-space: nowrap !important;
             }
           `;
           document.head.appendChild(style);
         }
 
         // --- SCALING ---
-        // We inflate the WordCloud's internal font size by 15% to force it to allocate 
+        // We inflate the WordCloud's internal font size by 25% to force it to allocate 
         // a larger collision box. This provides clean, professional padding without being too spaced out.
         // The CSS scale then shrinks the visual text back to the intended size.
         const targetMaxFont = Math.round(sizeH / 5.2);
         const targetMinFont = Math.max(12, Math.round(sizeH / 40));
 
-        const paddingMultiplier = 1.15;
+        const paddingMultiplier = 1.25;
         const maxFont = targetMaxFont * paddingMultiplier;
         const minFont = targetMinFont * paddingMultiplier;
 
         // BALANCED GRID SIZE: 
-        // 12px provides a solid balance between tight nesting and preventing cluttered overlap.
-        const gridSize = Math.max(12, Math.round(Math.min(sizeW, sizeH) / 75));
+        // 16px provides a solid blocky collision grid, ensuring comfortable gaps between all words.
+        const gridSize = Math.max(16, Math.round(Math.min(sizeW, sizeH) / 70));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {

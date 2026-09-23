@@ -1,6 +1,97 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { getMaskCanvas } from "../utils/masks";
 import { Maximize, Minimize, StopCircle } from "lucide-react";
+import React from "react";
+
+// ── ImageSideSparkles for Iconic Mode ───────────────────────────────────────
+const ImageSideSparkles = () => {
+  // Left Zone: 0 to 1000 out of 4200 (approx 23.8%)
+  const leftSparkles = React.useMemo(() => Array.from({ length: 80 }).map((_, i) => ({
+    id: `l-${i}`,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 8}s`,
+    duration: `${Math.random() * 4 + 2}s`,
+    size: `${Math.random() * 20 + 10}px`,
+    rotation: `${Math.random() * 90}deg`
+  })), []);
+
+  // Right Zone: 3100 to 4200 out of 4200 (approx 26.2%)
+  const rightSparkles = React.useMemo(() => Array.from({ length: 90 }).map((_, i) => ({
+    id: `r-${i}`,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 8}s`,
+    duration: `${Math.random() * 4 + 2}s`,
+    size: `${Math.random() * 20 + 10}px`,
+    rotation: `${Math.random() * 90}deg`
+  })), []);
+
+  const rays = [
+    { id: 1, left: "-20%", delay: "0s", duration: "7s", rotation: "-15deg" },
+    { id: 2, left: "20%", delay: "2s", duration: "9s", rotation: "5deg" },
+    { id: 3, left: "50%", delay: "4s", duration: "8s", rotation: "20deg" }
+  ];
+
+  return (
+    <>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "23.8%", pointerEvents: "none", zIndex: 2, overflow: "hidden" }}>
+        {rays.map(r => (
+          <div key={`l-ray-${r.id}`} style={{
+            position: "absolute", top: "-10%", left: r.left, width: "60%", height: "120%",
+            background: "linear-gradient(180deg, rgba(255,215,0,0.35) 0%, rgba(255,215,0,0) 100%)",
+            clipPath: "polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)",
+            transformOrigin: "top center",
+            animation: `wc-ray-sweep ${r.duration} ease-in-out infinite alternate`,
+            animationDelay: r.delay,
+            transform: `rotate(${r.rotation})`
+          }} />
+        ))}
+        {leftSparkles.map(s => (
+          <div key={s.id} style={{
+            position: "absolute", left: s.left, top: s.top, width: s.size, height: s.size,
+            background: "#FFD700", clipPath: "polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%)",
+            animation: `wc-sparkle-shine ${s.duration} ease-in-out infinite alternate`,
+            animationDelay: s.delay, opacity: 0, transform: `rotate(${s.rotation})`
+          }} />
+        ))}
+      </div>
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "26.2%", pointerEvents: "none", zIndex: 2, overflow: "hidden" }}>
+        {rays.map(r => (
+          <div key={`r-ray-${r.id}`} style={{
+            position: "absolute", top: "-10%", left: r.left, width: "60%", height: "120%",
+            background: "linear-gradient(180deg, rgba(255,215,0,0.35) 0%, rgba(255,215,0,0) 100%)",
+            clipPath: "polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)",
+            transformOrigin: "top center",
+            animation: `wc-ray-sweep ${r.duration} ease-in-out infinite alternate`,
+            animationDelay: r.delay,
+            transform: `rotate(${r.rotation})`
+          }} />
+        ))}
+        {rightSparkles.map(s => (
+          <div key={s.id} style={{
+            position: "absolute", left: s.left, top: s.top, width: s.size, height: s.size,
+            background: "#FFD700", clipPath: "polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%)",
+            animation: `wc-sparkle-shine ${s.duration} ease-in-out infinite alternate`,
+            animationDelay: s.delay, opacity: 0, transform: `rotate(${s.rotation})`
+          }} />
+        ))}
+      </div>
+      <style>{`
+        @keyframes wc-sparkle-shine {
+          0% { transform: translateY(0) scale(0) rotate(0deg); opacity: 0; filter: drop-shadow(0 0 5px #FFD700) drop-shadow(0 0 10px #FFD700); }
+          50% { opacity: 1; transform: translateY(-10px) scale(1.3) rotate(45deg); filter: drop-shadow(0 0 15px #FFD700) drop-shadow(0 0 25px rgba(255,215,0,0.8)); }
+          100% { transform: translateY(-20px) scale(0) rotate(90deg); opacity: 0; filter: drop-shadow(0 0 5px #FFD700); }
+        }
+        @keyframes wc-ray-sweep {
+          0% { opacity: 0.1; transform: rotate(-5deg) scaleX(0.8); }
+          50% { opacity: 0.6; transform: rotate(10deg) scaleX(1.3); filter: brightness(1.2); }
+          100% { opacity: 0.1; transform: rotate(0deg) scaleX(0.9); }
+        }
+      `}</style>
+    </>
+  );
+};
 
 /**
  * Build a wordcloud2 collision mask from an image.
@@ -982,6 +1073,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
       }}
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      {isIconic && <ImageSideSparkles />}
 
       {/* wordcloud2 places span elements here for iconic modes */}
       <div

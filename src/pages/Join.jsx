@@ -10,6 +10,7 @@ import BottomRightWaves from "../components/BottomRightWaves";
 import { EVENTS } from "../utils/theme";
 import { Send, Loader, CheckCircle, ArrowRight } from "lucide-react";
 import badWords from "../utils/badWords.json";
+import GoldSparkles from "../components/GoldSparkles";
 
 function NameEntry({ onSubmit, eventId }) {
   const [name, setName] = useState("");
@@ -19,6 +20,7 @@ function NameEntry({ onSubmit, eventId }) {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
       <BgGrid />
       <BottomRightWaves />
+      <GoldSparkles />
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="animate-slide-right">
         <div style={{ textAlign: "center", marginBottom: "2rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
           {event ? (
@@ -113,6 +115,7 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <BgGrid />
       <BottomRightWaves />
+      <GoldSparkles />
       {/* Topbar */}
       <div style={{ position: "relative", zIndex: 1, height: 52, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", padding: "0 1.5rem", background: "var(--bg-secondary)", gap: "1rem" }}>
         {event ? (
@@ -288,6 +291,7 @@ function ThankYouScreen({ eventId, onPlayAgain, isEnded }) {
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
       <BgGrid />
       <BottomRightWaves />
+      <GoldSparkles />
       <div className="card animate-slide-right" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2rem 1rem" }}>
         <CheckCircle size={48} style={{ color: "#16A34A", margin: "0 auto 1.25rem" }} />
         {event && <img src={event.logo} alt={event.name} style={{ height: 80, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}

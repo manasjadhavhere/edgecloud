@@ -263,7 +263,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             canvas.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud(canvas, {
-              list: currentWords.map(({ text, value }) => [text, Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont))]),
+              list: currentWords.map(({ text, value }) => [text.toUpperCase(), Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont))]),
               gridSize: Math.max(6, Math.round(w / 90)),
               weightFactor: 1,
               fontFamily: "'Segoe UI', Arial, sans-serif",
@@ -669,7 +669,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([off, tempDiv], {
-              list: currentWords.map(({ text, value }) => [text, value]),
+              list: currentWords.map(({ text, value }) => [text.toUpperCase(), value]),
               gridSize: Math.max(5, Math.round(sw / 80)),
               weightFactor: (size) => {
                 return minFont + Math.pow(Math.max(0.1, size / maxVal), 1.2) * (maxFont - minFont);
@@ -750,7 +750,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([off, tempDiv], {
-              list: currentWords.map(({ text, value }) => [text, value]),
+              list: currentWords.map(({ text, value }) => [text.toUpperCase(), value]),
               gridSize: Math.max(6, Math.round(sw / 70)),
               weightFactor: (s) => {
                 const mn = minFont, mx = maxFont;

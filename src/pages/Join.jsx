@@ -198,31 +198,78 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "var(--bg)", zIndex: 9999,
           display: "flex", alignItems: "center", justifyContent: "center",
+          animation: "screen-glow 3.5s ease-in-out forwards"
         }}>
           {rocketWords.map((word, i) => (
             <div
               key={i}
-              style={{
-                fontSize: "3rem", fontWeight: 900, color: "#FFFFFF",
-                animation: `rocket-fly 3.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`,
-                animationDelay: `${i * 0.4}s`,
-                opacity: 0,
-                transform: "translateY(100vh)",
-                position: "absolute",
-                textTransform: "uppercase",
-                textShadow: "0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 140, 0, 0.8), 0 15px 60px rgba(255, 69, 0, 1)"
-              }}
+              className="rocket-word"
+              style={{ "--delay": `${i * 0.4}s` }}
             >
               {word}
             </div>
           ))}
           <style>{`
+            @keyframes screen-glow {
+              0% { box-shadow: inset 0 0 0px rgba(255, 215, 0, 0); }
+              20% { box-shadow: inset 0 0 60px rgba(255, 165, 0, 0.5); }
+              50% { box-shadow: inset 0 0 150px rgba(255, 215, 0, 0.8), inset 0 0 40px rgba(255, 69, 0, 0.6); }
+              80% { box-shadow: inset 0 0 80px rgba(255, 165, 0, 0.5); }
+              100% { box-shadow: inset 0 0 0px rgba(255, 215, 0, 0); }
+            }
+            .rocket-word {
+              font-size: 3rem;
+              font-weight: 900;
+              color: #000000;
+              opacity: 0;
+              transform: translateY(100vh);
+              position: absolute;
+              text-transform: uppercase;
+              animation: rocket-fly 3.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+              animation-delay: var(--delay);
+              text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            }
+            .rocket-word::before {
+              content: '';
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 120%;
+              height: 120%;
+              background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,215,0,0.6) 40%, transparent 70%);
+              z-index: -1;
+              border-radius: 50%;
+              filter: blur(10px);
+            }
+            .rocket-word::after {
+              content: '';
+              position: absolute;
+              top: 80%;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 80%;
+              height: 0;
+              background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, rgba(255,215,0,0.9) 5%, rgba(255,140,0,0.8) 20%, rgba(255,69,0,0.3) 60%, transparent 100%);
+              filter: blur(12px);
+              z-index: -2;
+              opacity: 0;
+              animation: rocket-trail 3.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+              animation-delay: var(--delay);
+            }
             @keyframes rocket-fly {
-              0% { opacity: 0; transform: translateY(100vh) scale(0.6); }
-              10% { opacity: 1; transform: translateY(30vh) scale(1.1); filter: drop-shadow(0 40px 30px rgba(255,215,0,0.4)); }
-              40% { opacity: 1; transform: translateY(-5vh) scale(1.3); filter: drop-shadow(0 60px 40px rgba(255,215,0,0.6)); }
-              70% { opacity: 1; transform: translateY(-15vh) scale(1.3); filter: drop-shadow(0 80px 50px rgba(255,215,0,0.8)); }
-              100% { opacity: 0; transform: translateY(-100vh) scale(0.8); filter: blur(6px); }
+              0% { opacity: 0; transform: translateY(100vh) scale(0.5); }
+              15% { opacity: 1; transform: translateY(25vh) scale(1.1); }
+              45% { opacity: 1; transform: translateY(-5vh) scale(1.3); }
+              75% { opacity: 1; transform: translateY(-15vh) scale(1.3); }
+              100% { opacity: 0; transform: translateY(-100vh) scale(0.5); }
+            }
+            @keyframes rocket-trail {
+              0% { opacity: 0; height: 0; }
+              15% { opacity: 1; height: 40vh; }
+              45% { opacity: 1; height: 120vh; }
+              75% { opacity: 1; height: 120vh; }
+              100% { opacity: 0; height: 0; }
             }
           `}</style>
         </div>

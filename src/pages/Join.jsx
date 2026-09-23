@@ -218,13 +218,17 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
               100% { box-shadow: inset 0 0 0px rgba(255, 215, 0, 0); }
             }
             .rocket-word {
-              font-size: 3rem;
+              font-size: clamp(2rem, 10vw, 3.5rem);
               font-weight: 900;
               color: #000000;
               opacity: 0;
               transform: translateY(100vh);
               position: absolute;
               text-transform: uppercase;
+              text-align: center;
+              max-width: 90vw;
+              overflow-wrap: break-word;
+              line-height: 1.1;
               animation: rocket-fly 3.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
               animation-delay: var(--delay);
               text-shadow: 0 0 10px rgba(255,255,255,0.8);

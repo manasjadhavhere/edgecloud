@@ -27,9 +27,8 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
   }
 
   const examples = [
-    "The biggest trend next year will be __.",
-    "My main challenge today is __.",
-    "If I could automate one thing, it would be __."
+    "Which brand screams “India” to you? __",
+    "Which brand has the most unforgettable tagline? __"
   ];
 
   const parts = sentence.split("__");
@@ -37,7 +36,7 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      
+
       {/* Editor Section */}
       <div style={{ position: "relative" }}>
         <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
@@ -50,12 +49,12 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
           placeholder='E.g. The most important innovation next year is __.'
           value={sentence}
           onChange={(e) => setSentence(e.target.value)}
-          style={{ 
-            fontFamily: "var(--font-body)", 
-            fontSize: "1.05rem", 
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: "1.05rem",
             lineHeight: 1.7,
             padding: "1rem",
-            paddingBottom: "3.5rem", 
+            paddingBottom: "3.5rem",
             borderRadius: "4px",
             border: "1px solid var(--border-strong)",
             background: "#fff",
@@ -63,13 +62,13 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
             resize: "none"
           }}
         />
-        
+
         {/* Floating controls inside textarea area */}
         <div style={{ position: "absolute", bottom: "10px", left: "10px", right: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button className="btn btn-outline btn-sm" onClick={insertBlank} type="button" style={{ borderRadius: "4px", background: "#f8f9fa", borderColor: "var(--border)", padding: "0.3rem 0.75rem", boxShadow: "none", color: "var(--text)" }}>
             <Plus size={13} /> Insert Blank (__)
           </button>
-          
+
           <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", background: "transparent", padding: 0 }}>
             {blankCount} blank{blankCount !== 1 ? "s" : ""}
           </span>
@@ -82,9 +81,9 @@ function SentenceEditor({ sentence, setSentence, textareaRef }) {
           <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>Quick Templates</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             {examples.map((ex, i) => (
-              <button 
-                key={i} 
-                className="btn btn-ghost btn-sm" 
+              <button
+                key={i}
+                className="btn btn-ghost btn-sm"
                 onClick={() => setSentence(ex)}
                 style={{ fontSize: "0.8rem", fontWeight: 500, borderRadius: "4px", border: "1px solid var(--border)", color: "var(--text)", padding: "0.3rem 0.75rem", background: "#fff" }}
               >
@@ -210,8 +209,8 @@ export default function Host() {
   const [gameId, setGameId] = useState(location.state?.gameId || null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
-  const textareaRef    = useRef(null);
-  const cloudCanvasRef  = useRef(null); // captures the live word cloud canvas
+  const textareaRef = useRef(null);
+  const cloudCanvasRef = useRef(null); // captures the live word cloud canvas
   const { game, responses } = useGame(gameId);
   const joinUrl = `${window.location.origin}/join/${gameId}`;
 
@@ -278,7 +277,7 @@ export default function Host() {
                   {responses.length} response{responses.length !== 1 ? "s" : ""}
                 </p>
                 <div style={{ marginTop: "1rem" }}>
-                  <a 
+                  <a
                     href={`/live_results/${gameId}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -351,11 +350,11 @@ export default function Host() {
                   Write a fill-in-the-blank sentence. Audience members will submit words to complete it, generating your live word cloud.
                 </p>
                 <SentenceEditor sentence={sentence} setSentence={setSentence} textareaRef={textareaRef} />
-                
+
                 <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
                   <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>Display Mode:</label>
-                  <select 
-                    value={viewMode} 
+                  <select
+                    value={viewMode}
                     onChange={(e) => setViewMode(e.target.value)}
                     style={{ padding: "0.5rem 1rem", borderRadius: "4px", border: "1px solid var(--border)", fontSize: "0.85rem", outline: "none", cursor: "pointer", background: "#fff" }}
                   >
@@ -363,15 +362,15 @@ export default function Host() {
                     <option value="event">Event View (LED Screen)</option>
                   </select>
                 </div>
-                
+
                 {error && <div className="fade-in" style={{ background: "#FEF2F2", color: "#B91C1C", padding: "0.85rem 1rem", borderRadius: "4px", fontSize: "0.85rem", marginTop: "1.25rem", display: "flex", alignItems: "center", gap: "8px", fontWeight: 500, border: "1px solid #FECACA" }}>
                   <StopCircle size={16} /> {error}
                 </div>}
-                
+
                 <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
-                  <button 
-                    className="btn btn-primary btn-lg" 
-                    onClick={handleCreate} 
+                  <button
+                    className="btn btn-primary btn-lg"
+                    onClick={handleCreate}
                     disabled={creating}
                     style={{ fontSize: "0.85rem", padding: "0.8rem 2rem", borderRadius: "4px", letterSpacing: "0.05em", boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}
                   >
@@ -444,7 +443,7 @@ export default function Host() {
                   <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", textAlign: "center", wordBreak: "break-all", fontFamily: "monospace" }}>
                     {joinUrl}
                   </p>
-                  <button 
+                  <button
                     className="btn btn-outline"
                     style={{ width: "100%", marginTop: "0.75rem", fontSize: "0.75rem" }}
                     onClick={() => window.open(`/qr/${gameId}`, '_blank')}

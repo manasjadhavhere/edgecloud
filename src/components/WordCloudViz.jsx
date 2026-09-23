@@ -329,13 +329,15 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         //   inner golden ring: cx=2052.5px(48.87%w), cy=504px(50%h), rx=792px(78.57%h), ry=504px(50%h)
         //   7% safety inset applied so words never touch the golden lines
 
+
+        //GEMINI RESPONSE
         let cX, cY, rx, ry;
         if (isEvent) {
-          cX = tX + tW * (2052 / 4200);
-          cY = tY + tH * (548 / 1008);
-
-          rx = tW * (793 / 4200);
-          ry = tH * (804 / 1008);
+          const inset = 0.93; // 7% safety margin to stay off the golden lines
+          cX = tX + tW * (2052.5 / 4200);
+          cY = tY + tH * (504 / 1008);
+          rx = tW * ((792 * inset) / 4200);
+          ry = tH * ((504 * inset) / 1008);
         } else {
           cX = tX + tW * 0.50;
           cY = tY + tH * 0.50;
@@ -343,6 +345,22 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
           ry = tH * 0.25;
         }
 
+        //GPT RESPONSE
+        // let cX, cY, rx, ry;
+        // if (isEvent) {
+        //   cX = tX + tW * (2052 / 4200);
+        //   cY = tY + tH * (548 / 1008);
+
+        //   rx = tW * (793 / 4200) * 0.97;
+        //   ry = tH * (803 / 1008) * 0.97;
+        // } else {
+        //   cX = tX + tW * 0.50;
+        //   cY = tY + tH * 0.50;
+        //   rx = tH * 0.25;
+        //   ry = tH * 0.25;
+        // }
+
+        //Claude Response
         // let cX, cY, rx, ry;
         // if (isEvent) {
         //   cX = tX + tW * 0.4887;
@@ -405,15 +423,33 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
          * Constraint: total_text_area <= ovalArea * packFactor
          * Solve for maxFont.
          */
+
+        //GEMINI RESPONSE
         const ovalArea = Math.PI * rx * ry;
-        const packFactor = 0.52;        // wordcloud2 packs to ~52% of area
+        // Increase pack factor heavily. Since most words are smaller than maxFont due to the power curve, 
+        // they take up less area. A higher factor forces the text to grow and spread to the edges.
+        const packFactor = 4.0;
         const availArea = ovalArea * packFactor;
         const avgWordLen = displayWords.reduce((s, wd) => s + wd.text.length, 0) / (displayWords.length || 1);
         const charAspect = 0.58;
         const rawMax = Math.sqrt(availArea / (displayWords.length * avgWordLen * charAspect));
-        const maxFont = Math.max(10, Math.min(rawMax, isFullscreen ? 180 : 80));
-        const minFont = Math.max(8, Math.round(maxFont * 0.22));
-        const gridSize = Math.max(4, Math.round(Math.min(sizeW, sizeH) / 80));
+
+        // Remove the arbitrary 80/180px caps that cause tiny words on large canvases.
+        // Cap dynamically based on the seal's physical height (sizeH) to allow natural scaling.
+        const maxFont = Math.max(16, Math.min(rawMax, sizeH / 2.5));
+        const minFont = Math.max(10, Math.round(maxFont * 0.25)); // Slightly bump minimum font to fill gaps
+        const gridSize = Math.max(4, Math.round(Math.min(sizeW, sizeH) / 90)); // Tighter grid for dense packing
+
+        //CLAUDE RESPONSE
+        // const ovalArea = Math.PI * rx * ry;
+        // const packFactor = 0.52;        // wordcloud2 packs to ~52% of area
+        // const availArea = ovalArea * packFactor;
+        // const avgWordLen = displayWords.reduce((s, wd) => s + wd.text.length, 0) / (displayWords.length || 1);
+        // const charAspect = 0.58;
+        // const rawMax = Math.sqrt(availArea / (displayWords.length * avgWordLen * charAspect));
+        // const maxFont = Math.max(10, Math.min(rawMax, isFullscreen ? 180 : 80));
+        // const minFont = Math.max(8, Math.round(maxFont * 0.22));
+        // const gridSize = Math.max(4, Math.round(Math.min(sizeW, sizeH) / 80));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
-import { ref, push } from "firebase/database";
+import { ref, push, goOffline, goOnline } from "firebase/database";
 import { useGame } from "../hooks/useGame";
 import { countBlanks } from "../utils/wordCount";
 import BgGrid from "../components/BgGrid";
@@ -333,13 +333,17 @@ export default function Join() {
         timeoutId = setTimeout(() => {
           setParticipantName(null);
           setSubmitted(false);
+          goOffline(db);
           navigate("/");
         }, 30000);
       } else {
         // Clear timer if user returns before 30 seconds
         if (timeoutId) clearTimeout(timeoutId);
+        goOnline(db);
       }
     };
+
+    goOnline(db);
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {

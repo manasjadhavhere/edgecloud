@@ -75,6 +75,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
   const wordsRef = useRef(words);
   const isDrawingRef = useRef(false);
   const pendingDrawRef = useRef(false);
+  // Stable ref so useEffects don't re-fire when drawCloud identity changes
+  const drawCloudRef = useRef(null);
 
   useEffect(() => {
     wordsRef.current = words;
@@ -250,8 +252,10 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
 
         const maxVal = Math.max(...currentWords.map(w => w.value), 1);
+
         const minFont = Math.max(10, Math.round(w / 40));
         const maxFont = Math.min(Math.round(w / 6), 140);
+
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -330,10 +334,14 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         //   7% safety inset applied so words never touch the golden lines
 
 
-        //GEMINI RESPONSE
+        // GEMINI RESPONSE - FINAL
+
         let cX, cY, rx, ry;
         if (isEvent) {
-          const inset = 0.93; // 7% safety margin to stay off the golden lines
+          // Changed from 0.97 to 0.85. This creates a generous 15% inner padding
+          // so the words form a clean shape without touching the border.
+          // const inset = 0.85;
+          const inset = 0.96;
           cX = tX + tW * (2052.5 / 4200);
           cY = tY + tH * (504 / 1008);
           rx = tW * ((792 * inset) / 4200);
@@ -344,6 +352,35 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
           rx = tH * 0.25;
           ry = tH * 0.25;
         }
+
+        // let cX, cY, rx, ry;
+        // if (isEvent) {
+        //   const inset = 0.97; // 3% safety margin to push words closer to the edge
+        //   cX = tX + tW * (2052.5 / 4200);
+        //   cY = tY + tH * (504 / 1008);
+        //   rx = tW * ((792 * inset) / 4200);
+        //   ry = tH * ((504 * inset) / 1008);
+        // } else {
+        //   cX = tX + tW * 0.50;
+        //   cY = tY + tH * 0.50;
+        //   rx = tH * 0.25;
+        //   ry = tH * 0.25;
+        // }
+
+        //GEMINI RESPONSE - 1
+        // let cX, cY, rx, ry;
+        // if (isEvent) {
+        //   const inset = 0.93; // 7% safety margin to stay off the golden lines
+        //   cX = tX + tW * (2052.5 / 4200);
+        //   cY = tY + tH * (504 / 1008);
+        //   rx = tW * ((792 * inset) / 4200);
+        //   ry = tH * ((504 * inset) / 1008);
+        // } else {
+        //   cX = tX + tW * 0.50;
+        //   cY = tY + tH * 0.50;
+        //   rx = tH * 0.25;
+        //   ry = tH * 0.25;
+        // }
 
         //GPT RESPONSE
         // let cX, cY, rx, ry;
@@ -411,10 +448,14 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         tempDiv.style.top = `${divTop}px`;
         tempDiv.style.width = `${divW}px`;
         tempDiv.style.height = `${divH}px`;
-        tempDiv.style.overflow = "hidden";
-        tempDiv.style.borderRadius = "50% / 50%";
-        // Hard visual backstop — no word span can ever render outside this clip
-        tempDiv.style.clipPath = "ellipse(50% 50% at 50% 50%)";
+        // Changed to 'visible' and removed the hard clipPath so bottom words are never sliced
+        tempDiv.style.overflow = "visible";
+        tempDiv.style.borderRadius = "0";
+        tempDiv.style.clipPath = "none";
+        // tempDiv.style.overflow = "hidden";
+        // tempDiv.style.borderRadius = "50% / 50%";
+        // // Hard visual backstop — no word span can ever render outside this clip
+        // tempDiv.style.clipPath = "ellipse(50% 50% at 50% 50%)";
 
         /**
          * AREA-BASED FONT SIZING — guarantees ALL words fit, zero dropped.
@@ -425,20 +466,20 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
          */
 
         //GEMINI RESPONSE
-        const ovalArea = Math.PI * rx * ry;
+        // const ovalArea = Math.PI * rx * ry;
         // Increase pack factor heavily. Since most words are smaller than maxFont due to the power curve, 
         // they take up less area. A higher factor forces the text to grow and spread to the edges.
-        const packFactor = 4.0;
-        const availArea = ovalArea * packFactor;
-        const avgWordLen = displayWords.reduce((s, wd) => s + wd.text.length, 0) / (displayWords.length || 1);
-        const charAspect = 0.58;
-        const rawMax = Math.sqrt(availArea / (displayWords.length * avgWordLen * charAspect));
+        // const packFactor = 4.0;
+        // const availArea = ovalArea * packFactor;
+        // const avgWordLen = displayWords.reduce((s, wd) => s + wd.text.length, 0) / (displayWords.length || 1);
+        // const charAspect = 0.58;
+        // const rawMax = Math.sqrt(availArea / (displayWords.length * avgWordLen * charAspect));
 
         // Remove the arbitrary 80/180px caps that cause tiny words on large canvases.
         // Cap dynamically based on the seal's physical height (sizeH) to allow natural scaling.
-        const maxFont = Math.max(16, Math.min(rawMax, sizeH / 2.5));
-        const minFont = Math.max(10, Math.round(maxFont * 0.25)); // Slightly bump minimum font to fill gaps
-        const gridSize = Math.max(4, Math.round(Math.min(sizeW, sizeH) / 90)); // Tighter grid for dense packing
+        // const maxFont = Math.max(16, Math.min(rawMax, sizeH / 2.5));
+        // const minFont = Math.max(10, Math.round(maxFont * 0.25)); // Slightly bump minimum font to fill gaps
+        // const gridSize = Math.max(4, Math.round(Math.min(sizeW, sizeH) / 90)); // Tighter grid for dense packing
 
         //CLAUDE RESPONSE
         // const ovalArea = Math.PI * rx * ry;
@@ -451,6 +492,119 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         // const minFont = Math.max(8, Math.round(maxFont * 0.22));
         // const gridSize = Math.max(4, Math.round(Math.min(sizeW, sizeH) / 80));
 
+        //   if (currentWords.length > 0) {
+        //     await new Promise(resolve => {
+        //       let done = false;
+        //       const ok = () => { if (!done) { done = true; resolve(); } };
+        //       tempDiv.addEventListener("wordcloudstop", ok, { once: true });
+        //       WordCloud([maskOff, tempDiv], {
+        //         list: displayWords.map(({ text, value }) => [text, value]),
+        //         gridSize,
+        //         weightFactor: (s) => {
+        //           // Power curve: most-frequent word → maxFont, tail → minFont
+        //           return minFont + Math.pow(Math.max(0, s / maxVal), 0.7) * (maxFont - minFont);
+        //         },
+        //         fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+        //         fontWeight: 800,
+        //         color: (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta / (2 * Math.PI)) * THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+        //         rotateRatio: 0,
+        //         backgroundColor: "transparent",
+        //         drawOutOfBound: false,
+        //         shrinkToFit: true,
+        //         clearCanvas: false,
+        //         wait: 8,
+        //         abortThreshold: 5000, // never abandon a word due to timeout
+        //       });
+        //       setTimeout(ok, 15000); // absolute safety timeout
+        //     });
+        //   }
+
+        //   if (gen !== genRef.current) return;
+        // } // REMOVED CLOSING BRACE FROM HERE
+
+        // const ovalArea = Math.PI * rx * ry;
+        // // Lowered pack factor mathematically reduces overall font mass, stopping clutter
+        // const packFactor = 1.2;
+        // const availArea = ovalArea * packFactor;
+        // const avgWordLen = displayWords.reduce((s, wd) => s + wd.text.length, 0) / (displayWords.length || 1);
+        // const charAspect = 0.55;
+        // const rawMax = Math.sqrt(availArea / (displayWords.length * avgWordLen * charAspect));
+
+        // // Slightly stricter max font cap to maintain balance
+        // const maxFont = Math.max(16, Math.min(rawMax, sizeH / 4.5));
+        // const minFont = Math.max(10, Math.round(maxFont * 0.25));
+
+        // // Increased grid size makes the invisible collision boxes around words larger, stopping overlaps
+        // const gridSize = Math.max(12, Math.round(Math.min(sizeW, sizeH) / 35));
+
+        // if (currentWords.length > 0) {
+        //   await new Promise(resolve => {
+        //     let done = false;
+        //     const ok = () => { if (!done) { done = true; resolve(); } };
+        //     tempDiv.addEventListener("wordcloudstop", ok, { once: true });
+        //     WordCloud([maskOff, tempDiv], {
+        //       list: displayWords.map(({ text, value }) => [text, value]),
+        //       gridSize,
+        //       weightFactor: (s) => {
+        //         return minFont + Math.pow(Math.max(0, s / maxVal), 0.8) * (maxFont - minFont);
+        //       },
+        //       fontFamily: "'Inter', system-ui, sans-serif",
+        //       fontWeight: 700,
+        //       color: (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta / (2 * Math.PI)) * THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+        //       rotateRatio: 0,
+        //       backgroundColor: "transparent",
+        //       drawOutOfBound: false,
+        //       shrinkToFit: true,
+        //       clearCanvas: false,
+        //       wait: 8,
+        //       abortThreshold: 5000,
+        //     });
+        //     setTimeout(ok, 15000);
+        //   });
+        // }
+
+
+        // CRITICAL SPAN FIX: Force line-height to exactly 1 so the HTML span 
+        // height perfectly matches the Canvas font metric, eliminating vertical bleeding.
+        tempDiv.style.lineHeight = "1";
+        tempDiv.className = "wordcloud-wrapper";
+
+        // Inject global CSS to scale down the spans, creating a guaranteed perfect gap (padding) between words
+        // By scaling the HTML spans down, we perfectly compensate for the artificially inflated collision boxes (see below).
+        const scaleFactor = 1 / 1.3;
+        const styleId = "wordcloud-css-fix";
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement("style");
+          style.id = styleId;
+          style.textContent = `
+            .wordcloud-wrapper span {
+              transform: scale(${scaleFactor}) !important;
+              transform-origin: center center !important;
+              line-height: 1 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
+        // --- SCALING ---
+        // We inflate the WordCloud's internal font size by 30% to force it to allocate 
+        // a 30% larger collision box on the hidden canvas. This gives huge breathing room 
+        // for tall ascenders/descenders (like in Cormorant Garamond).
+        // The CSS scale(0.769) then shrinks the visual text back to the intended size.
+        const targetMaxFont = Math.round(sizeH / 5.2);
+        const targetMinFont = Math.max(12, Math.round(sizeH / 40));
+        
+        const paddingMultiplier = 1.3;
+        const maxFont = targetMaxFont * paddingMultiplier;
+        const minFont = targetMinFont * paddingMultiplier;
+
+        // BALANCED GRID SIZE: 
+        // 16 is the "sweet spot". It is precise enough to prevent erratic placements,
+        // but chunky enough to guarantee a few pixels of natural breathing room (padding) between words.
+        const gridSize = Math.max(16, Math.round(Math.min(sizeW, sizeH) / 50));
+
         if (currentWords.length > 0) {
           await new Promise(resolve => {
             let done = false;
@@ -459,12 +613,12 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             WordCloud([maskOff, tempDiv], {
               list: displayWords.map(({ text, value }) => [text, value]),
               gridSize,
+              classes: "wordcloud-span",
               weightFactor: (s) => {
-                // Power curve: most-frequent word → maxFont, tail → minFont
-                return minFont + Math.pow(Math.max(0, s / maxVal), 0.7) * (maxFont - minFont);
+                return minFont + Math.pow(Math.max(0, s / maxVal), 1.1) * (maxFont - minFont);
               },
-              fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
-              fontWeight: 800,
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontWeight: 400,
               color: (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta / (2 * Math.PI)) * THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
               rotateRatio: 0,
               backgroundColor: "transparent",
@@ -472,9 +626,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
               shrinkToFit: true,
               clearCanvas: false,
               wait: 8,
-              abortThreshold: 5000, // never abandon a word due to timeout
+              abortThreshold: 5000,
             });
-            setTimeout(ok, 15000); // absolute safety timeout
+            setTimeout(ok, 15000);
           });
         }
 
@@ -693,7 +847,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             span.style.opacity = "1";
             span.animate(
               [{ opacity: 0, transform: `translate(${dx}px,${dy}px) ${bt}` }, { opacity: 1, transform: `translate(0,0) ${bt}` }],
-              { duration: 1000, easing: "cubic-bezier(0.16,1,0.3,1)", delay: i * 8, fill: "backwards" }
+              { duration: 1400, easing: "cubic-bezier(0.16,1,0.3,1)", delay: i * 18, fill: "backwards" }
             );
           });
         } catch (e) {
@@ -708,23 +862,36 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
     }
   }, [theme, cloudMode, isFullscreen, fillShape, restoreFromCache, saveToCache, viewMode]);
 
+  // Keep the stable ref in sync with the latest drawCloud
+  useEffect(() => {
+    drawCloudRef.current = drawCloud;
+  }, [drawCloud]);
+
+  // ── When words change, invalidate caches and debounce the redraw ─────────
+  // Debouncing by 2s means rapid incoming responses (e.g., many players answering
+  // at once) are batched into a SINGLE smooth animation, not a janky double-fire.
   useEffect(() => {
     if (!words || words.length === 0) return;
-    drawCloud();
-  }, [words, drawCloud]);
 
-  useEffect(() => {
-    if (imagesLoaded === 0) return;
-    drawCloud();
-  }, [imagesLoaded, drawCloud]);
-
-  // ── When words change, invalidate all mode caches ────────────────────────
-  useEffect(() => {
+    // Invalidate caches so the next draw is always a fresh render
     cache.current.trophy = null;
     cache.current.shape = null;
     cache.current.full_trophy = null;
+
+    const timer = setTimeout(() => {
+      drawCloudRef.current?.();
+    }, 2000);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(words)]);
+
+  // ── Trigger draw when images finish loading (only first time) ────────────
+  useEffect(() => {
+    if (imagesLoaded === 0) return;
+    drawCloudRef.current?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imagesLoaded]);
 
   const isIconic = theme === "iconic";
 

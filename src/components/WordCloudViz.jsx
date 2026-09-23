@@ -157,7 +157,7 @@ function loadImg(src) {
  * Words update in real-time. Switching modes restores a cached render
  * so the layout never changes just from toggling.
  */
-export default function WordCloudViz({ words, forwardedRef, theme = "default", viewMode = "normal", fillShape = false, onStop = null }) {
+export default function WordCloudViz({ words, forwardedRef, theme = "default", viewMode = "normal", fillShape = false, onStop = null, soundEnabled = false }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const htmlCloudRef = useRef(null);
@@ -165,6 +165,49 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cloudMode, setCloudMode] = useState("trophy"); // "trophy" | "shape" | "full_trophy"
+
+  // Sound Effect Logic
+  const audioCtxRef = useRef(null);
+  const playPopSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.05);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {
+      console.warn("Audio play failed", e);
+    }
+  }, [soundEnabled]);
+
+  const prevTotalCount = useRef(0);
+  useEffect(() => {
+    if (!words) return;
+    const currentTotal = words.reduce((acc, w) => acc + w.value, 0);
+    // Play sound if the total number of submitted words increased
+    if (soundEnabled && currentTotal > prevTotalCount.current) {
+      playPopSound();
+    }
+    prevTotalCount.current = currentTotal;
+  }, [words, soundEnabled, playPopSound]);
 
   // Generation counter — increment aborts any stale async draw
   const genRef = useRef(0);

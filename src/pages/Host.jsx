@@ -10,8 +10,7 @@ import BottomRightWaves from "../components/BottomRightWaves";
 import QRDisplay from "../components/QRDisplay";
 import WordCloudViz from "../components/WordCloudViz";
 import { EVENTS, isLoggedIn, getStoredTheme, storeTheme, applyTheme, setLoggedOut } from "../utils/theme";
-import { Plus, StopCircle, Eye, Users, ChevronLeft, LayoutDashboard, Zap, LogOut } from "lucide-react";
-
+import { Plus, StopCircle, Eye, Users, ChevronLeft, LayoutDashboard, Zap, LogOut, Volume2, VolumeX } from "lucide-react";
 // ── Sentence editor ──────────────────────────────────────────
 function SentenceEditor({ sentence, setSentence, textareaRef }) {
   function insertBlank() {
@@ -209,6 +208,7 @@ export default function Host() {
   const [gameId, setGameId] = useState(location.state?.gameId || null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const textareaRef = useRef(null);
   const cloudCanvasRef = useRef(null); // captures the live word cloud canvas
   const { game, responses } = useGame(gameId);
@@ -420,9 +420,19 @@ export default function Host() {
 
                 {/* Word Cloud */}
                 <div className="card" style={{ minHeight: 400 }}>
-                  <p className="label-caps" style={{ marginBottom: "0.75rem" }}>Live Word Cloud</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                    <p className="label-caps" style={{ margin: 0 }}>Live Word Cloud</p>
+                    <button 
+                      className="btn btn-ghost btn-sm" 
+                      onClick={() => setSoundEnabled(!soundEnabled)}
+                      style={{ padding: "4px 8px", fontSize: "0.75rem", display: "flex", gap: "6px", alignItems: "center", color: soundEnabled ? "var(--accent)" : "var(--text-muted)" }}
+                    >
+                      {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                      {soundEnabled ? "Sound On" : "Sound Off"}
+                    </button>
+                  </div>
                   <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-md)", minHeight: 320, overflow: "hidden" }}>
-                    <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} viewMode={game?.viewMode || "normal"} forwardedRef={cloudCanvasRef} />
+                    <WordCloudViz words={computeWordFrequencies(responses)} theme={eventId} viewMode={game?.viewMode || "normal"} forwardedRef={cloudCanvasRef} soundEnabled={soundEnabled} />
                   </div>
                 </div>
               </div>

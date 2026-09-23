@@ -571,7 +571,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
 
         // Inject global CSS to scale down the spans, creating a guaranteed perfect gap (padding) between words
         // By scaling the HTML spans down, we perfectly compensate for the artificially inflated collision boxes (see below).
-        const scaleFactor = 1 / 1.3;
+        const scaleFactor = 1 / 1.05;
         const styleId = "wordcloud-css-fix";
         if (!document.getElementById(styleId)) {
           const style = document.createElement("style");
@@ -589,21 +589,19 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
 
         // --- SCALING ---
-        // We inflate the WordCloud's internal font size by 30% to force it to allocate 
-        // a 30% larger collision box on the hidden canvas. This gives huge breathing room 
-        // for tall ascenders/descenders (like in Cormorant Garamond).
-        // The CSS scale(0.769) then shrinks the visual text back to the intended size.
+        // We inflate the WordCloud's internal font size by 5% to force it to allocate 
+        // a slightly larger collision box. This provides a small safety margin against overlapping.
+        // The CSS scale then shrinks the visual text back to the intended size.
         const targetMaxFont = Math.round(sizeH / 5.2);
         const targetMinFont = Math.max(12, Math.round(sizeH / 40));
         
-        const paddingMultiplier = 1.3;
+        const paddingMultiplier = 1.05;
         const maxFont = targetMaxFont * paddingMultiplier;
         const minFont = targetMinFont * paddingMultiplier;
 
-        // BALANCED GRID SIZE: 
-        // 16 is the "sweet spot". It is precise enough to prevent erratic placements,
-        // but chunky enough to guarantee a few pixels of natural breathing room (padding) between words.
-        const gridSize = Math.max(16, Math.round(Math.min(sizeW, sizeH) / 50));
+        // FINE GRID SIZE: 
+        // 8px allows words to nest tightly into the gaps of other words, giving a true word-cloud feel.
+        const gridSize = Math.max(8, Math.round(Math.min(sizeW, sizeH) / 100));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {

@@ -34,6 +34,11 @@ function shuffle(arr) {
   return a;
 }
 
+function toTitleCase(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 const THEME_COLORS = {
   iconic: ["#FFD700", "#F5C518", "#DAA520", "#FFC200", "#FFE566", "#B8860B", "#FFF3B0", "#C5A000", "#FFDF00", "#E8B800"],
   tech: ["#003D73", "#00529B", "#0277BD", "#0288D1", "#006064", "#00838F", "#1565C0", "#01579B"],
@@ -263,8 +268,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             canvas.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud(canvas, {
-              list: currentWords.map(({ text, value }) => [text.toUpperCase(), Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont))]),
-              gridSize: Math.max(6, Math.round(w / 90)),
+              list: currentWords.map(({ text, value }) => [toTitleCase(text), Math.round(minFont + ((value / maxVal) ** 1.1) * (maxFont - minFont))]),
+              gridSize: Math.max(8, Math.round(w / 80)),
               weightFactor: 1,
               fontFamily: "'Segoe UI', Arial, sans-serif",
               fontWeight: "700",
@@ -571,7 +576,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
 
         // Inject global CSS to scale down the spans, creating a guaranteed perfect gap (padding) between words
         // By scaling the HTML spans down, we perfectly compensate for the artificially inflated collision boxes (see below).
-        const scaleFactor = 1 / 1.05;
+        const scaleFactor = 1 / 1.15;
         const styleId = "wordcloud-css-fix";
         if (!document.getElementById(styleId)) {
           const style = document.createElement("style");
@@ -589,19 +594,19 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
 
         // --- SCALING ---
-        // We inflate the WordCloud's internal font size by 5% to force it to allocate 
-        // a slightly larger collision box. This provides a small safety margin against overlapping.
+        // We inflate the WordCloud's internal font size by 15% to force it to allocate 
+        // a larger collision box. This provides clean, professional padding without being too spaced out.
         // The CSS scale then shrinks the visual text back to the intended size.
         const targetMaxFont = Math.round(sizeH / 5.2);
         const targetMinFont = Math.max(12, Math.round(sizeH / 40));
         
-        const paddingMultiplier = 1.05;
+        const paddingMultiplier = 1.15;
         const maxFont = targetMaxFont * paddingMultiplier;
         const minFont = targetMinFont * paddingMultiplier;
 
-        // FINE GRID SIZE: 
-        // 8px allows words to nest tightly into the gaps of other words, giving a true word-cloud feel.
-        const gridSize = Math.max(8, Math.round(Math.min(sizeW, sizeH) / 100));
+        // BALANCED GRID SIZE: 
+        // 12px provides a solid balance between tight nesting and preventing cluttered overlap.
+        const gridSize = Math.max(12, Math.round(Math.min(sizeW, sizeH) / 75));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -609,7 +614,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([maskOff, tempDiv], {
-              list: displayWords.map(({ text, value }) => [text.toUpperCase(), value]),
+              list: displayWords.map(({ text, value }) => [toTitleCase(text), value]),
               gridSize,
               classes: "wordcloud-span",
               weightFactor: (s) => {
@@ -667,8 +672,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([off, tempDiv], {
-              list: currentWords.map(({ text, value }) => [text.toUpperCase(), value]),
-              gridSize: Math.max(5, Math.round(sw / 80)),
+              list: currentWords.map(({ text, value }) => [toTitleCase(text), value]),
+              gridSize: Math.max(8, Math.round(sw / 75)),
               weightFactor: (size) => {
                 return minFont + Math.pow(Math.max(0.1, size / maxVal), 1.2) * (maxFont - minFont);
               },
@@ -748,8 +753,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             const ok = () => { if (!done) { done = true; resolve(); } };
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([off, tempDiv], {
-              list: currentWords.map(({ text, value }) => [text.toUpperCase(), value]),
-              gridSize: Math.max(6, Math.round(sw / 70)),
+              list: currentWords.map(({ text, value }) => [toTitleCase(text), value]),
+              gridSize: Math.max(10, Math.round(sw / 65)),
               weightFactor: (s) => {
                 const mn = minFont, mx = maxFont;
                 return mn + Math.pow(Math.max(0.1, s / maxVal), 1.15) * (mx - mn);

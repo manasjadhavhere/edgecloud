@@ -140,7 +140,7 @@ const THEME_COLORS = {
 function loadImg(src) {
   return new Promise(resolve => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => { console.warn("[WordCloud] failed to load:", src); resolve(null); };
     img.src = src;
@@ -190,7 +190,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
     // Pre-load all iconic-theme images at mount
     const load = (src, key) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      // img.crossOrigin = "anonymous";
       img.onload = () => {
         imgRefs.current[key] = img;
         setImagesLoaded(prev => prev + 1);

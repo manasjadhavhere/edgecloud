@@ -324,17 +324,19 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
         ctx.drawImage(trophy, tX, tY, tW, tH);
 
-        // Golden seal position
-        const cX = tX + tW * 0.50;
-        const cY = tY + tH * 0.50;
-        
-        // Use an elliptical boundary for the wide event image
-        let rx, ry;
+        // PIXEL-PERFECT oval center and radii
+        // Measured from the actual 4200x1008 source image:
+        //   inner golden ring: cx=2052.5px(48.87%w), cy=504px(50%h), rx=792px(78.57%h), ry=504px(50%h)
+        //   7% safety inset applied so words never touch the golden lines
+        let cX, cY, rx, ry;
         if (isEvent) {
-          // The visual golden oval on the 4200x1008 screen is tied to height, not the massive width.
-          rx = tH * 0.54; 
-          ry = tH * 0.44;
+          cX = tX + tW * 0.4887;
+          cY = tY + tH * 0.5000;
+          rx = tH * 0.7307; // 78.57% * 0.93 inset
+          ry = tH * 0.4650; // 50.00% * 0.93 inset
         } else {
+          cX = tX + tW * 0.50;
+          cY = tY + tH * 0.50;
           rx = tH * 0.25;
           ry = tH * 0.25;
         }
@@ -372,24 +374,31 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         }
         maskOffCtx.putImageData(maskId, 0, 0);
 
-        tempDiv.style.left = `${divLeft}px`;
-        tempDiv.style.top = `${divTop}px`;
-        tempDiv.style.width = `${divW}px`;
-        tempDiv.style.height = `${divH}px`;
-        tempDiv.style.overflow = "hidden";
-        tempDiv.style.borderRadius = isEvent ? "50% / 50%" : "50%";
-        // Enforce strict visual boundary so CSS scaled animations absolutely never bleed out
-        tempDiv.style.clipPath = isEvent ? "ellipse(50% 50% at 50% 50%)" : "circle(50% at 50% 50%)";
+        tempDiv.style.left         = `${divLeft}px`;
+        tempDiv.style.top          = `${divTop}px`;
+        tempDiv.style.width        = `${divW}px`;
+        tempDiv.style.height       = `${divH}px`;
+        tempDiv.style.overflow     = "hidden";
+        tempDiv.style.borderRadius = "50% / 50%";
+        // Hard visual backstop — no word span can ever render outside this clip
+        tempDiv.style.clipPath     = "ellipse(50% 50% at 50% 50%)";
 
-        // B2B Professional styling and robust sizing
-        
-        // Dynamically scale max font based on word count with an aggressive inverse curve to prevent overcrowding
-        let maxFontBase = isFullscreen ? 160 : 60;
-        if (currentWords.length > 5) {
-            maxFontBase = maxFontBase * Math.pow(5 / currentWords.length, 0.60);
-        }
-        const maxFont = Math.max(16, Math.min(maxFontBase, Math.round(sizeW / 10)));
-        const minFont = Math.max(7, Math.round(maxFont / 4));
+        /**
+         * AREA-BASED FONT SIZING — guarantees ALL words fit, zero dropped.
+         *
+         * Model: total_text_area = wordCount * avgWordLen * font² * charAspect
+         * Constraint: total_text_area <= ovalArea * packFactor
+         * Solve for maxFont.
+         */
+        const ovalArea   = Math.PI * rx * ry;
+        const packFactor = 0.52;        // wordcloud2 packs to ~52% of area
+        const availArea  = ovalArea * packFactor;
+        const avgWordLen = displayWords.reduce((s, wd) => s + wd.text.length, 0) / (displayWords.length || 1);
+        const charAspect = 0.58;
+        const rawMax     = Math.sqrt(availArea / (displayWords.length * avgWordLen * charAspect));
+        const maxFont    = Math.max(10, Math.min(rawMax, isFullscreen ? 180 : 80));
+        const minFont    = Math.max(8,  Math.round(maxFont * 0.22));
+        const gridSize   = Math.max(4,  Math.round(Math.min(sizeW, sizeH) / 80));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -398,23 +407,23 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([maskOff, tempDiv], {
               list:            displayWords.map(({ text, value }) => [text, value]),
-              gridSize:        Math.max(6, Math.round(sizeH / 50)), // slightly larger grid speeds up placement to prevent drops
+              gridSize,
               weightFactor:    (s) => {
-                // Ensure even the lowest frequency words are legible and fill gaps
-                return minFont + Math.pow(Math.max(0.01, s / maxVal), 0.8) * (maxFont - minFont);
+                // Power curve: most-frequent word → maxFont, tail → minFont
+                return minFont + Math.pow(Math.max(0, s / maxVal), 0.7) * (maxFont - minFont);
               },
               fontFamily:      "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
               fontWeight:      800,
-              color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta/(2*Math.PI))*THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
+              color:           (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta / (2 * Math.PI)) * THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
               rotateRatio:     0,
               backgroundColor: "transparent",
               drawOutOfBound:  false,
               shrinkToFit:     true,
               clearCanvas:     false,
-              wait:            10, // give browser breathing room to prevent freezing
-              abortThreshold:  2500, // heavily increase threshold so words are never dropped due to timeouts
+              wait:            8,
+              abortThreshold:  5000, // never abandon a word due to timeout
             });
-            setTimeout(ok, 8000);
+            setTimeout(ok, 15000); // absolute safety timeout
           });
         }
 

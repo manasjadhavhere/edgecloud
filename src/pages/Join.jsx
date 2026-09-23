@@ -225,7 +225,29 @@ export default function Join() {
   const [submitted, setSubmitted]             = useState(false);
   const { game, loading, error } = useGame(gameId);
 
-  // Removed the useEffect that redirects players to the results page.
+  // ── Session Timeout on Inactivity (Minimize) ──
+  useEffect(() => {
+    let timeoutId;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Start a 30-second timer when minimized/hidden
+        timeoutId = setTimeout(() => {
+          setParticipantName(null);
+          setSubmitted(false);
+          navigate("/");
+        }, 30000);
+      } else {
+        // Clear timer if user returns before 30 seconds
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [navigate]);
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>

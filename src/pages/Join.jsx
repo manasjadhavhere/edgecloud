@@ -20,13 +20,15 @@ function NameEntry({ onSubmit, eventId }) {
       <BgGrid />
       <BottomRightWaves />
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="animate-slide-right">
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "2rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
           {event ? (
-            <img src={event.logo} alt={event.name} style={{ height: 48, width: "auto", objectFit: "contain", marginBottom: "1rem" }} />
+            <img src={event.logo} alt={event.name} style={{ height: 80, width: "auto", objectFit: "contain" }} />
           ) : (
-            <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 32, width: "auto", objectFit: "contain", marginBottom: "1rem" }} />
+            <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 60, width: "auto", objectFit: "contain" }} />
           )}
-          <span className="badge badge-green"><span className="live-dot" style={{ width: 6, height: 6 }} /> Live Session</span>
+          <span className="badge badge-green" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+            <span className="live-dot" style={{ width: 8, height: 8 }} /> Live Session
+          </span>
         </div>
 
         <div className="card">
@@ -65,6 +67,8 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
   const [answers, setAnswers]     = useState(Array(blanks).fill(""));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]         = useState("");
+  const [isRocketing, setIsRocketing] = useState(false);
+  const [rocketWords, setRocketWords] = useState([]);
   const event = EVENTS[eventId];
 
   function setAnswer(i, val) { setAnswers((p) => { const n=[...p]; n[i]=val; return n; }); }
@@ -91,9 +95,12 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
           submittedAt: Date.now(),
         });
       }
-      
-      // Proceed to Thank You screen regardless to silently drop bad words
-      onSubmitted();
+      // Show rocket animation before navigating to Thank You
+      setRocketWords(cleanWords.length > 0 ? cleanWords : answers.map(a => a.trim()));
+      setIsRocketing(true);
+      setTimeout(() => {
+        onSubmitted();
+      }, 1500);
     } catch (err) {
       setError("Submission failed: " + err.message); setSubmitting(false);
     }
@@ -185,6 +192,40 @@ function AnswerForm({ sentence, participantName, gameId, onSubmitted, eventId })
           </button>
         </div>
       </div>
+
+      {isRocketing && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "var(--bg)", zIndex: 9999,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {rocketWords.map((word, i) => (
+            <div
+              key={i}
+              style={{
+                fontSize: "2.5rem", fontWeight: 800, color: "var(--primary)",
+                animation: `rocket-fly 1.2s cubic-bezier(0.5, 0, 0.2, 1) forwards`,
+                animationDelay: `${i * 0.15}s`,
+                opacity: 0,
+                transform: "translateY(100vh)",
+                position: "absolute",
+                textTransform: "uppercase",
+                textShadow: "0 4px 12px rgba(0,0,0,0.15)"
+              }}
+            >
+              {word}
+            </div>
+          ))}
+          <style>{`
+            @keyframes rocket-fly {
+              0% { opacity: 0; transform: translateY(100vh) scale(0.8); }
+              20% { opacity: 1; transform: translateY(10vh) scale(1.4); }
+              60% { opacity: 1; transform: translateY(-10vh) scale(1.4); }
+              100% { opacity: 0; transform: translateY(-100vh) scale(0.8); filter: blur(4px); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

@@ -522,7 +522,7 @@ textarea.input { resize: vertical; min-height: 90px; line-height: 1.6; }
   font-family: var(--font-display);
   font-size: inherit;
   font-weight: 600;
-  color: var(--accent-text);
+  color: #000000;
   text-align: center;
   outline: none;
   transition: border-color 0.15s, background 0.15s;

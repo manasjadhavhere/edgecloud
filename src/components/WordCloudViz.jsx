@@ -331,9 +331,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         // Use an elliptical boundary for the wide event image
         let rx, ry;
         if (isEvent) {
-          // Narrower and slightly padded vertically to stay completely inside the inner golden lines.
-          rx = tW * 0.23; 
-          ry = tH * 0.38;
+          // The visual golden oval on the 4200x1008 screen is tied to height, not the massive width.
+          rx = tH * 0.54; 
+          ry = tH * 0.44;
         } else {
           rx = tH * 0.25;
           ry = tH * 0.25;
@@ -378,16 +378,18 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         tempDiv.style.height = `${divH}px`;
         tempDiv.style.overflow = "hidden";
         tempDiv.style.borderRadius = isEvent ? "50% / 50%" : "50%";
+        // Enforce strict visual boundary so CSS scaled animations absolutely never bleed out
+        tempDiv.style.clipPath = isEvent ? "ellipse(50% 50% at 50% 50%)" : "circle(50% at 50% 50%)";
 
         // B2B Professional styling and robust sizing
-        const minFont = Math.max(8, isFullscreen ? 12 : 6);
         
-        // Dynamically scale max font based on word count to prevent overcrowding
-        let maxFontBase = isFullscreen ? 180 : 60;
-        if (currentWords.length > 20) {
-            maxFontBase = maxFontBase * Math.max(0.4, 1 - (currentWords.length / 150));
+        // Dynamically scale max font based on word count with an aggressive inverse curve to prevent overcrowding
+        let maxFontBase = isFullscreen ? 160 : 60;
+        if (currentWords.length > 5) {
+            maxFontBase = maxFontBase * Math.pow(5 / currentWords.length, 0.60);
         }
-        const maxFont = Math.min(maxFontBase, Math.round(sizeW / 8));
+        const maxFont = Math.max(16, Math.min(maxFontBase, Math.round(sizeW / 10)));
+        const minFont = Math.max(7, Math.round(maxFont / 4));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -568,6 +570,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
     div.style.height = tempDiv.style.height;
     div.style.overflow = tempDiv.style.overflow;
     div.style.borderRadius = tempDiv.style.borderRadius;
+    div.style.clipPath = tempDiv.style.clipPath;
     div.innerHTML = tempDiv.innerHTML;
     div.style.opacity = "1";
 

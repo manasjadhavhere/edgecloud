@@ -22,9 +22,9 @@ function NameEntry({ onSubmit, eventId }) {
       <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }} className="animate-slide-right">
         <div style={{ textAlign: "center", marginBottom: "2rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
           {event ? (
-            <img src={event.logo} alt={event.name} style={{ height: 80, width: "auto", objectFit: "contain" }} />
+            <img src={event.logo} alt={event.name} style={{ height: 120, width: "auto", objectFit: "contain" }} />
           ) : (
-            <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 60, width: "auto", objectFit: "contain" }} />
+            <img src="/EdgeCloud Image.png" alt="EdgeCloud" style={{ height: 90, width: "auto", objectFit: "contain" }} />
           )}
           <span className="badge badge-green" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
             <span className="live-dot" style={{ width: 8, height: 8 }} /> Live Session
@@ -290,7 +290,7 @@ function ThankYouScreen({ eventId, onPlayAgain, isEnded }) {
       <BottomRightWaves />
       <div className="card animate-slide-right" style={{ position: "relative", zIndex: 1, maxWidth: 400, width: "100%", textAlign: "center", borderRadius: "2px", padding: "2rem 1rem" }}>
         <CheckCircle size={48} style={{ color: "#16A34A", margin: "0 auto 1.25rem" }} />
-        {event && <img src={event.logo} alt={event.name} style={{ height: 40, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}
+        {event && <img src={event.logo} alt={event.name} style={{ height: 80, objectFit: "contain", margin: "0 auto 1.5rem", display: "block" }} />}
         <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "0.5rem", color: "var(--text)" }}>{isEnded ? "Session Ended" : "Thank You!"}</h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "2rem", lineHeight: 1.6 }}>
           {isEnded 

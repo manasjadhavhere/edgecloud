@@ -926,12 +926,11 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(words)]);
 
-  // ── Trigger draw when images finish loading (only first time) ────────────
+  // ── Trigger draw when images load or layout props change ────────────
   useEffect(() => {
     if (imagesLoaded === 0) return;
     drawCloudRef.current?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imagesLoaded]);
+  }, [imagesLoaded, viewMode, cloudMode, isFullscreen, theme]);
 
   const isIconic = theme === "iconic";
 

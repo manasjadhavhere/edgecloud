@@ -4,7 +4,7 @@ export default function GoldSparkles() {
   // Memoize random positions so they don't jump around on re-renders
   // Increased count to 350 for an extremely dense sparkling effect
   const sparkles = React.useMemo(() => {
-    return Array.from({ length: 350 }).map((_, i) => ({
+    return Array.from({ length: 500 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
@@ -16,7 +16,13 @@ export default function GoldSparkles() {
   }, []);
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+    <>
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        pointerEvents: "none", zIndex: 9998,
+        animation: "subtle-border-pulse 4s ease-in-out infinite alternate"
+      }} />
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
       {sparkles.map((s) => (
         <div
           key={s.id}
@@ -42,7 +48,12 @@ export default function GoldSparkles() {
           50% { opacity: 0.9; transform: translateY(-10px) scale(1) rotate(45deg); filter: drop-shadow(0 0 10px #FFD700); }
           100% { transform: translateY(-20px) scale(0) rotate(90deg); opacity: 0; filter: drop-shadow(0 0 2px #FFD700); }
         }
+        @keyframes subtle-border-pulse {
+          0% { box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.05); }
+          100% { box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.25); border: 1px solid rgba(255, 215, 0, 0.15); }
+        }
       `}</style>
     </div>
+    </>
   );
 }

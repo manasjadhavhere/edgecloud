@@ -23,26 +23,26 @@ export default function GoldSparkles() {
         animation: "subtle-border-pulse 4s ease-in-out infinite alternate"
       }} />
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
-      {sparkles.map((s) => (
-        <div
-          key={s.id}
-          style={{
-            position: "absolute",
-            left: s.left,
-            top: s.top,
-            width: s.size,
-            height: s.size,
-            background: "#FFD700", // Solid gold
-            /* Creates a beautiful 4-point star/sparkle shape */
-            clipPath: "polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%)",
-            animation: `sparkle-shine ${s.duration} ease-in-out infinite alternate`,
-            animationDelay: s.delay,
-            opacity: 0,
-            transform: `rotate(${s.rotation})`
-          }}
-        />
-      ))}
-      <style>{`
+        {sparkles.map((s) => (
+          <div
+            key={s.id}
+            style={{
+              position: "absolute",
+              left: s.left,
+              top: s.top,
+              width: s.size,
+              height: s.size,
+              background: "#FFD700", // Solid gold
+              /* Creates a beautiful 4-point star/sparkle shape */
+              clipPath: "polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%)",
+              animation: `sparkle-shine ${s.duration} ease-in-out infinite alternate`,
+              animationDelay: s.delay,
+              opacity: 0,
+              transform: `rotate(${s.rotation})`
+            }}
+          />
+        ))}
+        <style>{`
         @keyframes sparkle-shine {
           0% { transform: translateY(0) scale(0) rotate(0deg); opacity: 0; filter: drop-shadow(0 0 2px #FFD700); }
           50% { opacity: 0.9; transform: translateY(-10px) scale(1) rotate(45deg); filter: drop-shadow(0 0 10px #FFD700); }
@@ -53,7 +53,7 @@ export default function GoldSparkles() {
           100% { box-shadow: inset 0 0 80px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.4); border: 2px solid rgba(255, 215, 0, 0.5); }
         }
       `}</style>
-    </div>
+      </div>
     </>
   );
 }

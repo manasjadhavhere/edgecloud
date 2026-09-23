@@ -599,7 +599,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         // The CSS scale then shrinks the visual text back to the intended size.
         const targetMaxFont = Math.round(sizeH / 5.2);
         const targetMinFont = Math.max(12, Math.round(sizeH / 40));
-        
+
         const paddingMultiplier = 1.15;
         const maxFont = targetMaxFont * paddingMultiplier;
         const minFont = targetMinFont * paddingMultiplier;
@@ -621,7 +621,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
                 return minFont + Math.pow(Math.max(0, s / maxVal), 1.1) * (maxFont - minFont);
               },
               fontFamily: "'Inter', system-ui, sans-serif",
-              fontWeight: 400,
+              fontWeight: 500,
               color: (_w, _wt, _fs, _d, theta) => THEME_COLORS.iconic[Math.abs(Math.floor((theta / (2 * Math.PI)) * THEME_COLORS.iconic.length)) % THEME_COLORS.iconic.length],
               rotateRatio: 0,
               backgroundColor: "transparent",
@@ -810,56 +810,56 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
       container.style.perspectiveOrigin = "50% 50%";
 
       if (cloudMode === "full_trophy") {
-          // full_trophy: Cinematic orbital burst — each word fires in from deep Z-space
-          // with a glowing chromatic overshoot at the screen-plane, then snaps to rest.
-          const shuffled = shuffle(children);
-          shuffled.forEach(s => { s.style.opacity = "0"; s.style.transition = "none"; });
-          shuffled.forEach((span, i) => {
-            const baseTransform = (span.style.transform || "").replace(/scale\([^)]*\)/g, "").trim();
-            // Random tilt starting in 3D space — heavier tilt for deeper words
-            const tilt = (Math.random() - 0.5) * 45;
-            // Start deeply behind screen with random XY drift to create an orbital burst feel
-            const startZ = -(1200 + Math.random() * 600);
-            const startX = (Math.random() - 0.5) * 180;
-            const startY = (Math.random() - 0.5) * 90;
-            // Stagger in 4 waves for a cascading depth effect
-            const wave = i % 4;
-            const waveDelay = wave * 60;
-            const wordDelay = Math.floor(i / 4) * 35 + waveDelay;
+        // full_trophy: Cinematic orbital burst — each word fires in from deep Z-space
+        // with a glowing chromatic overshoot at the screen-plane, then snaps to rest.
+        const shuffled = shuffle(children);
+        shuffled.forEach(s => { s.style.opacity = "0"; s.style.transition = "none"; });
+        shuffled.forEach((span, i) => {
+          const baseTransform = (span.style.transform || "").replace(/scale\([^)]*\)/g, "").trim();
+          // Random tilt starting in 3D space — heavier tilt for deeper words
+          const tilt = (Math.random() - 0.5) * 45;
+          // Start deeply behind screen with random XY drift to create an orbital burst feel
+          const startZ = -(1200 + Math.random() * 600);
+          const startX = (Math.random() - 0.5) * 180;
+          const startY = (Math.random() - 0.5) * 90;
+          // Stagger in 4 waves for a cascading depth effect
+          const wave = i % 4;
+          const waveDelay = wave * 60;
+          const wordDelay = Math.floor(i / 4) * 35 + waveDelay;
 
-            span.animate(
-              [
-                {
-                  opacity: 0,
-                  filter: `blur(12px) brightness(0.5)`,
-                  transform: `${baseTransform} translate(${startX}px, ${startY}px) translateZ(${startZ}px) scale(0.05) rotate(${tilt}deg)`,
-                },
-                {
-                  opacity: 0.9,
-                  // Chromatic glow burst as word crosses the screen plane
-                  filter: `blur(0px) brightness(1.6) drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.6))`,
-                  transform: `${baseTransform} translate(${startX * 0.03}px, ${startY * 0.03}px) translateZ(60px) scale(1.12) rotate(${tilt * 0.04}deg)`,
-                  offset: 0.72,
-                },
-                {
-                  opacity: 1,
-                  filter: `blur(0px) brightness(1) drop-shadow(0 0 0px rgba(255,215,0,0))`,
-                  transform: `${baseTransform} translate(0,0) translateZ(0px) scale(1) rotate(0deg)`,
-                },
-              ],
+          span.animate(
+            [
               {
-                duration: 1100,
-                easing: "cubic-bezier(0.12, 0.8, 0.25, 1)",
-                delay: wordDelay,
-                fill: "backwards",
-              }
-            );
-            setTimeout(() => {
-              span.style.opacity = "1";
-              span.style.filter = "";
-              span.style.transform = baseTransform;
-            }, wordDelay + 1160);
-          });
+                opacity: 0,
+                filter: `blur(12px) brightness(0.5)`,
+                transform: `${baseTransform} translate(${startX}px, ${startY}px) translateZ(${startZ}px) scale(0.05) rotate(${tilt}deg)`,
+              },
+              {
+                opacity: 0.9,
+                // Chromatic glow burst as word crosses the screen plane
+                filter: `blur(0px) brightness(1.6) drop-shadow(0 0 12px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.6))`,
+                transform: `${baseTransform} translate(${startX * 0.03}px, ${startY * 0.03}px) translateZ(60px) scale(1.12) rotate(${tilt * 0.04}deg)`,
+                offset: 0.72,
+              },
+              {
+                opacity: 1,
+                filter: `blur(0px) brightness(1) drop-shadow(0 0 0px rgba(255,215,0,0))`,
+                transform: `${baseTransform} translate(0,0) translateZ(0px) scale(1) rotate(0deg)`,
+              },
+            ],
+            {
+              duration: 1100,
+              easing: "cubic-bezier(0.12, 0.8, 0.25, 1)",
+              delay: wordDelay,
+              fill: "backwards",
+            }
+          );
+          setTimeout(() => {
+            span.style.opacity = "1";
+            span.style.filter = "";
+            span.style.transform = baseTransform;
+          }, wordDelay + 1160);
+        });
 
       } else {
         // ── Trophy seal: Full cinematic 3D depth-burst with chromatic overshoot ─

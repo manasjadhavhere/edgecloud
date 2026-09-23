@@ -331,9 +331,9 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         // Use an elliptical boundary for the wide event image
         let rx, ry;
         if (isEvent) {
-          // The golden boundary is much wider, spanning ~70% of the image width.
-          rx = tW * 0.35; 
-          ry = tH * 0.45;
+          // Narrower and slightly padded vertically to stay completely inside the inner golden lines.
+          rx = tW * 0.23; 
+          ry = tH * 0.38;
         } else {
           rx = tH * 0.25;
           ry = tH * 0.25;
@@ -380,8 +380,14 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
         tempDiv.style.borderRadius = isEvent ? "50% / 50%" : "50%";
 
         // B2B Professional styling and robust sizing
-        const minFont = Math.max(8, isFullscreen ? 16 : 8);
-        const maxFont = Math.min(isFullscreen ? 200 : 70, Math.round(sizeW / 6)); // Scaled to width so wide words fit
+        const minFont = Math.max(8, isFullscreen ? 12 : 6);
+        
+        // Dynamically scale max font based on word count to prevent overcrowding
+        let maxFontBase = isFullscreen ? 180 : 60;
+        if (currentWords.length > 20) {
+            maxFontBase = maxFontBase * Math.max(0.4, 1 - (currentWords.length / 150));
+        }
+        const maxFont = Math.min(maxFontBase, Math.round(sizeW / 8));
 
         if (currentWords.length > 0) {
           await new Promise(resolve => {
@@ -390,7 +396,7 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
             tempDiv.addEventListener("wordcloudstop", ok, { once: true });
             WordCloud([maskOff, tempDiv], {
               list:            displayWords.map(({ text, value }) => [text, value]),
-              gridSize:        Math.max(4, Math.round(sizeH / 60)), // Tighter grid so words can pack perfectly and don't get dropped
+              gridSize:        Math.max(6, Math.round(sizeH / 50)), // slightly larger grid speeds up placement to prevent drops
               weightFactor:    (s) => {
                 // Ensure even the lowest frequency words are legible and fill gaps
                 return minFont + Math.pow(Math.max(0.01, s / maxVal), 0.8) * (maxFont - minFont);
@@ -403,8 +409,8 @@ export default function WordCloudViz({ words, forwardedRef, theme = "default", v
               drawOutOfBound:  false,
               shrinkToFit:     true,
               clearCanvas:     false,
-              wait:            2,
-              abortThreshold:  30,
+              wait:            10, // give browser breathing room to prevent freezing
+              abortThreshold:  2500, // heavily increase threshold so words are never dropped due to timeouts
             });
             setTimeout(ok, 8000);
           });
